@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2 } from "lucide-react";
 import StatusHeader from "@/components/StatusHeader";
 import SpeedometerGauge from "@/components/SpeedometerGauge";
 import WaveAnimation from "@/components/WaveAnimation";
@@ -61,6 +61,17 @@ const Index = () => {
   const [usedQuota, setUsedQuota] = useState(45.8);
   const [simulationMode, setSimulationMode] = useState(true);
   const [devices, setDevices] = useState(initialDevices);
+  const [gameMode, setGameMode] = useState(false);
+
+  const handleGameModeToggle = () => {
+    setGameMode(!gameMode);
+    toast({
+      title: gameMode ? "Game Mode Dinonaktifkan" : "Game Mode Aktif",
+      description: gameMode 
+        ? "Konfigurasi jaringan kembali normal." 
+        : "Prioritas gaming diaktifkan. Ping dioptimalkan!",
+    });
+  };
 
   // Simulation effect for demo mode
   useEffect(() => {
@@ -157,6 +168,24 @@ const Index = () => {
               </div>
             </div>
             <WaveAnimation speed={(downloadSpeed / 100) * 100} />
+            
+            {/* Game Mode Button */}
+            <button
+              onClick={handleGameModeToggle}
+              className={`w-full mt-4 py-3 px-4 rounded-xl flex items-center justify-center gap-3 font-semibold transition-all duration-300 ${
+                gameMode
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_30px_hsl(280,80%,50%/0.4)] animate-pulse"
+                  : "bg-secondary hover:bg-secondary/80 text-foreground"
+              }`}
+            >
+              <Gamepad2 className={`w-5 h-5 ${gameMode ? "animate-bounce" : ""}`} />
+              <span>{gameMode ? "Game Mode Aktif" : "Aktifkan Game Mode"}</span>
+              {gameMode && (
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                  LOW PING
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Quota Card */}
