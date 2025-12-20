@@ -8,6 +8,7 @@ import DeviceCard from "@/components/DeviceCard";
 import WiFiSettings from "@/components/WiFiSettings";
 import AdminPanel from "@/components/AdminPanel";
 import BottomNavigation from "@/components/BottomNavigation";
+import SupportChatbot from "@/components/SupportChatbot";
 import { toast } from "@/hooks/use-toast";
 
 // Mock data for devices
@@ -257,6 +258,7 @@ const Index = () => {
         />
       )}
 
+      <SupportChatbot />
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
