@@ -11,6 +11,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import SupportChatbot from "@/components/SupportChatbot";
 import AntiIntruder from "@/components/AntiIntruder";
 import ParentalControl from "@/components/ParentalControl";
+import NetworkCleaner from "@/components/NetworkCleaner";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 
@@ -356,6 +357,12 @@ const Index = () => {
             onBlockDevice={(id) => handleBlockDevice(id, false)}
             onUnblockDevice={handleUnblockDevice}
           />
+        </div>
+      )}
+
+      {activeTab === "optimasi" && (
+        <div className="px-4">
+          <NetworkCleaner simulationMode={simulationMode} />
         </div>
       )}
 
