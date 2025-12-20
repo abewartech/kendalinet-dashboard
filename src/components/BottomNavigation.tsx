@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -9,6 +9,7 @@ const navItems = [
   { id: "beranda", label: "Beranda", icon: Home },
   { id: "perangkat", label: "Perangkat", icon: Smartphone },
   { id: "keamanan", label: "Keamanan", icon: Shield },
+  { id: "jadwal", label: "Jadwal", icon: Clock },
   { id: "wifi", label: "WiFi", icon: Wifi },
   { id: "admin", label: "Admin", icon: Settings },
 ];

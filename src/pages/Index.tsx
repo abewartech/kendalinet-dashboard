@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2, Shield } from "lucide-react";
+import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2, Shield, Clock } from "lucide-react";
 import StatusHeader from "@/components/StatusHeader";
 import SpeedometerGauge from "@/components/SpeedometerGauge";
 import WaveAnimation from "@/components/WaveAnimation";
@@ -10,6 +10,7 @@ import AdminPanel from "@/components/AdminPanel";
 import BottomNavigation from "@/components/BottomNavigation";
 import SupportChatbot from "@/components/SupportChatbot";
 import AntiIntruder from "@/components/AntiIntruder";
+import ParentalControl from "@/components/ParentalControl";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 
@@ -180,17 +181,27 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [simulationMode]);
 
-  const handleBlockDevice = (id: string) => {
+  const handleBlockDevice = (id: string, showToast = true) => {
     setDevices((prev) =>
       prev.map((device) =>
         device.id === id ? { ...device, connected: false } : device
       )
     );
-    toast({
-      title: "Perangkat Diblokir",
-      description: "Perangkat telah diputus dari jaringan.",
-      variant: "destructive",
-    });
+    if (showToast) {
+      toast({
+        title: "Perangkat Diblokir",
+        description: "Perangkat telah diputus dari jaringan.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnblockDevice = (id: string) => {
+    setDevices((prev) =>
+      prev.map((device) =>
+        device.id === id ? { ...device, connected: true } : device
+      )
+    );
   };
 
   const handleLimitDevice = (id: string, limit: number) => {
@@ -334,6 +345,16 @@ const Index = () => {
             onBlockDevice={handleBlockDevice}
             whitelistMode={whitelistMode}
             onWhitelistModeToggle={handleWhitelistModeToggle}
+          />
+        </div>
+      )}
+
+      {activeTab === "jadwal" && (
+        <div className="px-4">
+          <ParentalControl
+            devices={devices}
+            onBlockDevice={(id) => handleBlockDevice(id, false)}
+            onUnblockDevice={handleUnblockDevice}
           />
         </div>
       )}
