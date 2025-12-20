@@ -12,6 +12,7 @@ import SupportChatbot from "@/components/SupportChatbot";
 import AntiIntruder from "@/components/AntiIntruder";
 import ParentalControl from "@/components/ParentalControl";
 import NetworkCleaner from "@/components/NetworkCleaner";
+import BillingReport from "@/components/BillingReport";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 
@@ -363,6 +364,12 @@ const Index = () => {
       {activeTab === "optimasi" && (
         <div className="px-4">
           <NetworkCleaner simulationMode={simulationMode} />
+        </div>
+      )}
+
+      {activeTab === "tagihan" && (
+        <div className="px-4">
+          <BillingReport usedGB={usedQuota} totalGB={100} />
         </div>
       )}
 
