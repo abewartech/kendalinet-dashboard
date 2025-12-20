@@ -20,6 +20,16 @@ const WaveAnimation = ({ speed, color = "hsl(187, 92%, 50%)" }: WaveAnimationPro
     const height = canvas.height;
     let offset = 0;
 
+    // Convert hsl to hsla for canvas compatibility
+    const toHsla = (hslColor: string, alpha: number) => {
+      // Handle "hsl(h, s%, l%)" format
+      const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+      if (match) {
+        return `hsla(${match[1]}, ${match[2]}%, ${match[3]}%, ${alpha})`;
+      }
+      return hslColor;
+    };
+
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
@@ -29,9 +39,9 @@ const WaveAnimation = ({ speed, color = "hsl(187, 92%, 50%)" }: WaveAnimationPro
 
       // Create gradient
       const gradient = ctx.createLinearGradient(0, 0, width, 0);
-      gradient.addColorStop(0, `${color.replace(")", " / 0.1)")}`);
-      gradient.addColorStop(0.5, `${color.replace(")", " / 0.4)")}`);
-      gradient.addColorStop(1, `${color.replace(")", " / 0.1)")}`);
+      gradient.addColorStop(0, toHsla(color, 0.1));
+      gradient.addColorStop(0.5, toHsla(color, 0.4));
+      gradient.addColorStop(1, toHsla(color, 0.1));
 
       // Draw wave
       ctx.beginPath();
@@ -58,7 +68,7 @@ const WaveAnimation = ({ speed, color = "hsl(187, 92%, 50%)" }: WaveAnimationPro
 
       ctx.lineTo(width, height);
       ctx.closePath();
-      ctx.fillStyle = `${color.replace(")", " / 0.2)")}`;
+      ctx.fillStyle = toHsla(color, 0.2);
       ctx.fill();
 
       offset += animationSpeed;
