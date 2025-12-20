@@ -11,6 +11,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import SupportChatbot from "@/components/SupportChatbot";
 import AntiIntruder from "@/components/AntiIntruder";
 import { toast } from "@/hooks/use-toast";
+import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 
 // Mock data for devices
 const initialDevices = [
@@ -85,16 +86,21 @@ const Index = () => {
   const [devices, setDevices] = useState(initialDevices);
   const [gameMode, setGameMode] = useState(false);
   const [whitelistMode, setWhitelistMode] = useState(false);
+  
+  const { permission, isSupported, requestPermission, notifyIntruder } = useBrowserNotification();
 
   // Simulate new device connection notification
   useEffect(() => {
     const newDevices = devices.filter((d) => d.isNew && d.connected);
     if (newDevices.length > 0 && whitelistMode) {
+      const device = newDevices[0];
       toast({
         title: "⚠️ Perangkat Baru Terdeteksi!",
-        description: `${newDevices[0].name} mencoba terhubung ke WiFi Anda.`,
+        description: `${device.name} mencoba terhubung ke WiFi Anda.`,
         variant: "destructive",
       });
+      // Send browser notification
+      notifyIntruder(device.name, device.mac);
     }
   }, []);
 

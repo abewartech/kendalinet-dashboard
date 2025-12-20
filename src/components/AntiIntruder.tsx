@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Shield, ShieldCheck, ShieldAlert, Bell, UserCheck, UserX } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, Bell, UserCheck, UserX, BellRing } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 
 interface Device {
   id: string;
@@ -30,6 +31,7 @@ const AntiIntruder = ({
   onWhitelistModeToggle,
 }: AntiIntruderProps) => {
   const [showNewDeviceAlert, setShowNewDeviceAlert] = useState(false);
+  const { permission, isSupported, requestPermission } = useBrowserNotification();
 
   const newDevices = devices.filter((d) => d.isNew && d.connected);
   const whitelistedDevices = devices.filter((d) => d.isWhitelisted);
@@ -108,6 +110,35 @@ const AntiIntruder = ({
             checked={whitelistMode}
             onCheckedChange={handleWhitelistModeToggle}
           />
+        </div>
+
+        {/* Browser Notification Toggle */}
+        <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 mt-3">
+          <div className="flex items-center gap-3">
+            <BellRing className="w-5 h-5 text-primary" />
+            <div>
+              <p className="font-medium text-foreground">Notifikasi Browser</p>
+              <p className="text-xs text-muted-foreground">
+                {!isSupported 
+                  ? "Browser tidak mendukung" 
+                  : permission === 'granted' 
+                    ? "Notifikasi aktif" 
+                    : "Aktifkan untuk peringatan penyusup"}
+              </p>
+            </div>
+          </div>
+          {isSupported && permission !== 'granted' ? (
+            <button
+              onClick={requestPermission}
+              className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              Aktifkan
+            </button>
+          ) : permission === 'granted' ? (
+            <span className="text-xs px-2 py-1 rounded-full bg-success/20 text-success">
+              Aktif
+            </span>
+          ) : null}
         </div>
       </div>
 
