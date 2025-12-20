@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -8,6 +8,7 @@ interface BottomNavigationProps {
 const navItems = [
   { id: "beranda", label: "Beranda", icon: Home },
   { id: "perangkat", label: "Perangkat", icon: Smartphone },
+  { id: "keamanan", label: "Keamanan", icon: Shield },
   { id: "wifi", label: "WiFi", icon: Wifi },
   { id: "admin", label: "Admin", icon: Settings },
 ];

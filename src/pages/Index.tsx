@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2 } from "lucide-react";
+import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2, Shield } from "lucide-react";
 import StatusHeader from "@/components/StatusHeader";
 import SpeedometerGauge from "@/components/SpeedometerGauge";
 import WaveAnimation from "@/components/WaveAnimation";
@@ -9,6 +9,7 @@ import WiFiSettings from "@/components/WiFiSettings";
 import AdminPanel from "@/components/AdminPanel";
 import BottomNavigation from "@/components/BottomNavigation";
 import SupportChatbot from "@/components/SupportChatbot";
+import AntiIntruder from "@/components/AntiIntruder";
 import { toast } from "@/hooks/use-toast";
 
 // Mock data for devices
@@ -22,6 +23,8 @@ const initialDevices = [
     connected: true,
     downloadSpeed: 45.2,
     uploadSpeed: 12.8,
+    isWhitelisted: true,
+    isNew: false,
   },
   {
     id: "2",
@@ -32,6 +35,8 @@ const initialDevices = [
     connected: true,
     downloadSpeed: 78.5,
     uploadSpeed: 25.3,
+    isWhitelisted: true,
+    isNew: false,
   },
   {
     id: "3",
@@ -42,6 +47,8 @@ const initialDevices = [
     connected: true,
     downloadSpeed: 32.1,
     uploadSpeed: 5.4,
+    isWhitelisted: false,
+    isNew: false,
   },
   {
     id: "4",
@@ -52,6 +59,20 @@ const initialDevices = [
     connected: false,
     downloadSpeed: 0,
     uploadSpeed: 0,
+    isWhitelisted: false,
+    isNew: false,
+  },
+  {
+    id: "5",
+    name: "Unknown Device",
+    type: "phone" as const,
+    ip: "192.168.1.105",
+    mac: "XX:YY:ZZ:AA:BB:05",
+    connected: true,
+    downloadSpeed: 15.3,
+    uploadSpeed: 4.2,
+    isWhitelisted: false,
+    isNew: true,
   },
 ];
 
@@ -63,6 +84,44 @@ const Index = () => {
   const [simulationMode, setSimulationMode] = useState(true);
   const [devices, setDevices] = useState(initialDevices);
   const [gameMode, setGameMode] = useState(false);
+  const [whitelistMode, setWhitelistMode] = useState(false);
+
+  // Simulate new device connection notification
+  useEffect(() => {
+    const newDevices = devices.filter((d) => d.isNew && d.connected);
+    if (newDevices.length > 0 && whitelistMode) {
+      toast({
+        title: "⚠️ Perangkat Baru Terdeteksi!",
+        description: `${newDevices[0].name} mencoba terhubung ke WiFi Anda.`,
+        variant: "destructive",
+      });
+    }
+  }, []);
+
+  const handleWhitelistDevice = (id: string) => {
+    setDevices((prev) =>
+      prev.map((device) =>
+        device.id === id ? { ...device, isWhitelisted: true, isNew: false } : device
+      )
+    );
+    const device = devices.find((d) => d.id === id);
+    toast({
+      title: "Perangkat Diizinkan",
+      description: `${device?.name} ditambahkan ke daftar perangkat keluarga.`,
+    });
+  };
+
+  const handleWhitelistModeToggle = (enabled: boolean) => {
+    setWhitelistMode(enabled);
+    if (enabled) {
+      // Block all non-whitelisted devices
+      setDevices((prev) =>
+        prev.map((device) =>
+          !device.isWhitelisted ? { ...device, connected: false } : device
+        )
+      );
+    }
+  };
 
   const handleGameModeToggle = () => {
     setGameMode(!gameMode);
@@ -197,26 +256,36 @@ const Index = () => {
           />
 
           {/* Quick Stats */}
-          <div className="glass-card p-4 slide-up" style={{ animationDelay: "0.3s" }}>
-            <div className="flex items-center justify-between">
+          <div className="grid grid-cols-2 gap-3" style={{ animationDelay: "0.3s" }}>
+            <div className="glass-card p-4 slide-up">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
                   <Users className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Perangkat Terhubung</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-xs text-muted-foreground">Terhubung</p>
+                  <p className="text-xl font-bold text-foreground">
                     {connectedDevicesCount}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setActiveTab("perangkat")}
-                className="px-4 py-2 rounded-xl bg-secondary text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
-              >
-                Lihat Semua
-              </button>
             </div>
+            <button
+              onClick={() => setActiveTab("keamanan")}
+              className="glass-card p-4 slide-up flex items-center gap-3 hover:bg-secondary/50 transition-colors"
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                whitelistMode ? "bg-success/10" : "bg-warning/10"
+              }`}>
+                <Shield className={`w-5 h-5 ${whitelistMode ? "text-success" : "text-warning"}`} />
+              </div>
+              <div className="text-left">
+                <p className="text-xs text-muted-foreground">Anti-Maling</p>
+                <p className="text-sm font-bold text-foreground">
+                  {whitelistMode ? "Aktif" : "Nonaktif"}
+                </p>
+              </div>
+            </button>
           </div>
         </div>
       )}
@@ -249,6 +318,18 @@ const Index = () => {
           initialPassword="password123"
           initialHidden={false}
         />
+      )}
+
+      {activeTab === "keamanan" && (
+        <div className="px-4">
+          <AntiIntruder
+            devices={devices}
+            onWhitelistDevice={handleWhitelistDevice}
+            onBlockDevice={handleBlockDevice}
+            whitelistMode={whitelistMode}
+            onWhitelistModeToggle={handleWhitelistModeToggle}
+          />
+        </div>
       )}
 
       {activeTab === "admin" && (
