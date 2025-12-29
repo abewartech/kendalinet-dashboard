@@ -18,6 +18,9 @@ import RouterManagement from "@/components/RouterManagement";
 import MultiRouterDashboard from "@/components/MultiRouterDashboard";
 import { BandwidthLimiter } from "@/components/BandwidthLimiter";
 import { VoucherSystem } from "@/components/VoucherSystem";
+import { DNSSettings } from "@/components/DNSSettings";
+import { DeviceGrouping } from "@/components/DeviceGrouping";
+import { DeviceUsageMonitor } from "@/components/DeviceUsageMonitor";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -434,6 +437,24 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "voucher" && (
         <div className="px-4">
           <VoucherSystem />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "dns" && (
+        <div className="px-4">
+          <DNSSettings />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "grupdevice" && (
+        <div className="px-4">
+          <DeviceGrouping devices={devices} />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "monitor" && (
+        <div className="px-4">
+          <DeviceUsageMonitor devices={devices} />
         </div>
       )}
 
