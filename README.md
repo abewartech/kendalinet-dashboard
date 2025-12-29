@@ -126,6 +126,13 @@ Semua API mengembalikan **JSON** dan hanya dapat diakses setelah login LuCI.
 
 ---
 
+## 📖 API Documentation
+
+For detailed information on how to use the backend API and the React hook, see:
+👉 [README.api.md](file:///c:/Users/user/Documents/projectss/kendalinet-dashboard/README.api.md)
+
+---
+
 ## 🚀 Cara Development (Frontend)
 
 ### Prasyarat
