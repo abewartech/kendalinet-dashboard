@@ -24,6 +24,10 @@ import { DeviceUsageMonitor } from "@/components/DeviceUsageMonitor";
 import { SpeedTest } from "@/components/SpeedTest";
 import GuestWiFi from "@/components/GuestWiFi";
 import TrafficStatistics from "@/components/TrafficStatistics";
+import VPNManagement from "@/components/VPNManagement";
+import ProxyInjectManager from "@/components/ProxyInjectManager";
+import AdblockManager from "@/components/AdblockManager";
+import AppBlocker from "@/components/AppBlocker";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -476,6 +480,16 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "traffic" && (
         <div className="px-4">
           <TrafficStatistics />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "kontrol" && (
+        <div className="px-4 space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Panel Kontrol</h2>
+          <VPNManagement />
+          <ProxyInjectManager />
+          <AdblockManager />
+          <AppBlocker />
         </div>
       )}
 
