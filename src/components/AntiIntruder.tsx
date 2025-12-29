@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Shield, ShieldCheck, ShieldAlert, Bell, UserCheck, UserX, BellRing } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, Bell, UserCheck, UserX, BellRing, History } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
+import { useNotificationHistory } from "@/hooks/useNotificationHistory";
 import WebhookSettings from "./WebhookSettings";
+import NotificationHistory from "./NotificationHistory";
 
 interface Device {
   id: string;
@@ -32,7 +34,9 @@ const AntiIntruder = ({
   onWhitelistModeToggle,
 }: AntiIntruderProps) => {
   const [showNewDeviceAlert, setShowNewDeviceAlert] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const { permission, isSupported, requestPermission } = useBrowserNotification();
+  const { getStats } = useNotificationHistory();
 
   const newDevices = devices.filter((d) => d.isNew && d.connected);
   const whitelistedDevices = devices.filter((d) => d.isWhitelisted);
@@ -73,6 +77,23 @@ const AntiIntruder = ({
       variant: "destructive",
     });
   };
+
+  const stats = getStats();
+
+  // Show history view
+  if (showHistory) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setShowHistory(false)}
+          className="flex items-center gap-2 text-sm text-primary hover:underline"
+        >
+          ← Kembali ke Keamanan
+        </button>
+        <NotificationHistory />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -264,6 +285,23 @@ const AntiIntruder = ({
           </div>
         </div>
       )}
+
+      {/* Notification History Button */}
+      <button
+        onClick={() => setShowHistory(true)}
+        className="glass-card p-4 w-full flex items-center gap-3 hover:bg-secondary/50 transition-colors slide-up"
+      >
+        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+          <History className="w-5 h-5 text-primary" />
+        </div>
+        <div className="flex-1 text-left">
+          <p className="font-medium text-foreground">Riwayat Deteksi</p>
+          <p className="text-xs text-muted-foreground">
+            {stats.total} perangkat tercatat • {stats.todayCount} hari ini
+          </p>
+        </div>
+        <span className="text-primary">→</span>
+      </button>
 
       {/* Webhook Settings for WhatsApp Notifications */}
       <WebhookSettings />
