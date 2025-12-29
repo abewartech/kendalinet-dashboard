@@ -42,6 +42,7 @@ const Index = () => {
     updateRouter,
     deleteRouter,
     switchRouter,
+    restoreRouters,
     checkAllRoutersStatus
   } = useRouterManager();
 
@@ -207,6 +208,7 @@ const Index = () => {
         onAddRouter={addRouter}
         onUpdateRouter={updateRouter}
         onDeleteRouter={deleteRouter}
+        onRestoreRouters={restoreRouters}
       />
 
       {/* Error Message when not connected */}
