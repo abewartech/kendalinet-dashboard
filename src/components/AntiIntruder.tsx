@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useNotificationHistory } from "@/hooks/useNotificationHistory";
 import WebhookSettings from "./WebhookSettings";
+import TelegramSettings from "./TelegramSettings";
 import NotificationHistory from "./NotificationHistory";
 
 interface Device {
@@ -303,8 +304,15 @@ const AntiIntruder = ({
         <span className="text-primary">→</span>
       </button>
 
-      {/* Webhook Settings for WhatsApp Notifications */}
-      <WebhookSettings />
+      {/* Notification Settings */}
+      <div className="space-y-3">
+        <h3 className="font-medium text-foreground text-sm flex items-center gap-2 px-1">
+          <Bell className="w-4 h-4" />
+          Pengaturan Notifikasi
+        </h3>
+        <WebhookSettings />
+        <TelegramSettings />
+      </div>
     </div>
   );
 };
