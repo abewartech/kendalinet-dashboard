@@ -1,73 +1,147 @@
-# Welcome to your Lovable project
+# 🚀 KendaliNet – PantauWrt Dashboard
 
-## Project info
+**KendaliNet (PantauWrt)** adalah dashboard **network monitoring & management** modern untuk **OpenWrt**, dengan desain **Clean Dark Mode + Glassmorphism premium**.  
+Terinspirasi dari dashboard network monitoring modern seperti **UniFi Network** dan **ASUS Router App**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Dirancang ringan, cepat, dan siap demo / siap jual untuk:
+- ISP Lokal
+- RT/RW Net
+- Router OpenWrt skala kecil
+- Presentasi dan marketing
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Fitur Utama
 
-**Use Lovable**
+### 🏠 Beranda
+- Speedometer animasi (real-time / simulasi)
+- Wave visualization traffic
+- Statistik kuota RX / TX
+- Status koneksi & uptime
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 📱 Perangkat
+- Daftar device aktif (DHCP leases)
+- Status online (indikator hijau)
+- Aksi cepat:
+  - Block device
+  - Bandwidth limiter *(opsional / pengembangan)*
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📡 WiFi Settings
+- Edit SSID
+- Ganti password WiFi
+- Toggle hide SSID
+- Simpan konfigurasi & reload WiFi otomatis
 
-**Use your preferred IDE**
+### 👨‍💼 Admin / System
+- Informasi sistem OpenWrt
+- Status WAN
+- Uptime router
+- Mode Simulasi (Demo Mode)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🧭 Bottom Navigation
+- Bottom navigation modern
+- Mobile-first design
+- Smooth animation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🎨 Desain & UI
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+- Dark Mode dengan subtle gradient
+- Glassmorphism cards (blur + transparency)
+- Warna:
+  - Cyan / Teal (primary)
+  - Hijau (status online)
+- Font: **Inter**
+- Animasi:
+  - Speedometer smooth
+  - Wave traffic
+  - Micro-interaction pada tombol
+
+---
+
+## 🧪 Mode Simulasi (Demo Mode)
+
+Mode simulasi memungkinkan dashboard berjalan **tanpa OpenWrt**.
+
+Fungsi:
+- Data kecepatan & kuota bergerak otomatis
+- Cocok untuk demo jualan & presentasi
+- Bisa diaktifkan via frontend atau API flag
+
+---
+
+## 🧠 Arsitektur Sistem
+
+[ Frontend Dashboard (React + Vite) ]
+│
+│ REST API (JSON)
+▼
+[ OpenWrt LuCI API (Lua) ]
+│
+┌───────┼────────┐
+▼ ▼ ▼
+UCI ubus /proc
+(WiFi) (Network) (Traffic)
+
+
+- Native OpenWrt
+- Tanpa Node.js di router
+- Ringan & aman untuk router kecil
+
+---
+
+## 🔌 API Backend (OpenWrt Lua)
+
+Backend API dibuat menggunakan **LuCI (Lua)**.
+
+### Endpoint API
+
+| Endpoint | Deskripsi |
+|-------|----------|
+| `/api/status` | Speed, kuota, uptime |
+| `/api/devices` | Daftar device aktif |
+| `/api/wifi` | Ambil konfigurasi WiFi |
+| `/api/wifi_save` | Simpan WiFi & reload |
+
+Semua API mengembalikan **JSON** dan hanya dapat diakses setelah login LuCI.
+
+---
+
+## 🛠️ Teknologi yang Digunakan
+
+### Frontend
+- Vite
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn-ui
+- Glassmorphism UI
+
+### Backend
+- OpenWrt
+- LuCI (Lua)
+- UCI
+- ubus
+
+---
+
+## 🚀 Cara Development (Frontend)
+
+### Prasyarat
+- Node.js ≥ 18
+- npm / pnpm
+
+### Langkah
+```bash
+# Clone repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Masuk ke folder project
+cd kendalinet-dashboard
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependency
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Jalankan development server
 npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
