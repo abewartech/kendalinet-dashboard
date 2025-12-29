@@ -1,6 +1,7 @@
 #!/bin/sh
 
 echo "Content-Type: application/json"
+echo "Access-Control-Allow-Origin: *"
 echo ""
 
 # Get uptime (in seconds)

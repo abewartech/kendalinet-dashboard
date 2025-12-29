@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { ubusCall, getSystemInfo, getNetworkInterfaceStatus, getBoardInfo } from '@/lib/ubusApi';
 
-const API_BASE = '/cgi-bin/luci/admin/kendalinet/api';
-const CGI_BASE = '/cgi-bin/kendalinet';
+// Tentukan base URL router. Jika berjalan di Android APK (Capacitor),
+// gunakan IP absolut. Jika di browser development, gunakan path relatif (proxy).
+const ROUTER_IP = import.meta.env.VITE_ROUTER_IP || '192.168.2.1';
+const IS_CAPACITOR = window.location.protocol === 'http:' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') || window.location.protocol === 'capacitor:';
+
+const BASE_URL = IS_CAPACITOR ? `http://${ROUTER_IP}` : '';
+const API_BASE = `${BASE_URL}/cgi-bin/luci/admin/kendalinet/api`;
+const CGI_BASE = `${BASE_URL}/cgi-bin/kendalinet`;
 
 export type ApiMethod = 'ubus' | 'luci' | 'cgi';
 
@@ -133,9 +139,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                         getBoardInfo().catch(() => ({}))
                     ]);
 
-                    const memory = systemInfo.memory || {};
-                    const total_mem = memory.total || 0;
-                    const available_mem = memory.available || memory.free || 0;
+                    const memory = systemInfo.memory || { total: 0, available: 0, free: 0 };
+                    const total_mem = memory.total;
+                    const available_mem = memory.available || memory.free;
                     const used_mem = total_mem - available_mem;
                     const mem_percent = total_mem > 0 ? Math.floor((used_mem / total_mem) * 100) : 0;
 

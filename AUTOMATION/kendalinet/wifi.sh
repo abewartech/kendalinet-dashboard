@@ -1,6 +1,7 @@
 #!/bin/sh
 
 echo "Content-Type: application/json"
+echo "Access-Control-Allow-Origin: *"
 echo ""
 
 # Function to find the first WiFi interface

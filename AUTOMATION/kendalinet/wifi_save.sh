@@ -1,6 +1,15 @@
 #!/bin/sh
 
 echo "Content-Type: application/json"
+echo "Access-Control-Allow-Origin: *"
+echo "Access-Control-Allow-Methods: POST, OPTIONS"
+echo "Access-Control-Allow-Headers: Content-Type"
+
+if [ "$REQUEST_METHOD" = "OPTIONS" ]; then
+    echo ""
+    exit 0
+fi
+
 echo ""
 
 # Function to find the first WiFi interface
