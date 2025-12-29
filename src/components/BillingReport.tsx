@@ -24,11 +24,14 @@ import {
   Wallet,
   BarChart3,
   AlertCircle,
-  Download,
   FileText,
-  FileSpreadsheet
+  FileSpreadsheet,
+  User,
+  MapPin,
+  Phone
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 interface BillingReportProps {
@@ -48,6 +51,9 @@ const chartConfig = {
 
 export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
   const [pricePerGB, setPricePerGB] = useState<number>(10000);
+  const [customerName, setCustomerName] = useState<string>("");
+  const [customerAddress, setCustomerAddress] = useState<string>("");
+  const [customerPhone, setCustomerPhone] = useState<string>("");
   const { toast } = useToast();
   
   // Note: Real billing data should come from API
@@ -91,6 +97,11 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
       ['Periode', monthYear],
       ['Tanggal Export', reportDate],
       [''],
+      ['DATA PELANGGAN'],
+      ['Nama', customerName || '-'],
+      ['Alamat', customerAddress || '-'],
+      ['No. HP', customerPhone || '-'],
+      [''],
       ['RINGKASAN PEMAKAIAN'],
       ['Total Pemakaian', `${totalUsageThisMonth.toFixed(2)} GB`],
       ['Rata-rata Harian', `${averageDaily.toFixed(2)} GB`],
@@ -109,7 +120,7 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `laporan-tagihan-${monthYear.replace(' ', '-')}.csv`);
+    link.setAttribute('download', `laporan-tagihan-${customerName || 'pelanggan'}-${monthYear.replace(' ', '-')}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -126,7 +137,7 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Laporan Tagihan Internet - ${monthYear}</title>
+        <title>Laporan Tagihan Internet - ${customerName || 'Pelanggan'} - ${monthYear}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0066cc; padding-bottom: 20px; }
@@ -141,6 +152,10 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
           .cost-box { background: #e6f3ff; padding: 20px; border-radius: 8px; text-align: center; }
           .cost-box .label { font-size: 14px; color: #666; }
           .cost-box .amount { font-size: 28px; font-weight: bold; color: #0066cc; }
+          .customer-info { background: #f0f7ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #0066cc; }
+          .customer-info h3 { margin: 0 0 10px 0; color: #0066cc; font-size: 14px; }
+          .customer-info p { margin: 5px 0; font-size: 14px; }
+          .customer-info .name { font-size: 18px; font-weight: bold; color: #333; }
           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
           th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
           th { background: #0066cc; color: white; }
@@ -155,6 +170,15 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
           <p>Periode: ${monthYear}</p>
           <p>Tanggal Export: ${reportDate}</p>
         </div>
+
+        ${(customerName || customerAddress || customerPhone) ? `
+        <div class="customer-info">
+          <h3>DATA PELANGGAN</h3>
+          ${customerName ? `<p class="name">👤 ${customerName}</p>` : ''}
+          ${customerAddress ? `<p>📍 ${customerAddress}</p>` : ''}
+          ${customerPhone ? `<p>📞 ${customerPhone}</p>` : ''}
+        </div>
+        ` : ''}
 
         <div class="section">
           <div class="section-title">RINGKASAN PEMAKAIAN</div>
@@ -263,6 +287,64 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Customer Data Input */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <User className="h-4 w-4 text-primary" />
+            Data Pelanggan
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="customerName" className="text-sm flex items-center gap-2">
+              <User className="h-3 w-3" />
+              Nama Pelanggan
+            </Label>
+            <Input
+              id="customerName"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Masukkan nama pelanggan"
+              className="bg-background"
+              maxLength={100}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="customerAddress" className="text-sm flex items-center gap-2">
+              <MapPin className="h-3 w-3" />
+              Alamat
+            </Label>
+            <Textarea
+              id="customerAddress"
+              value={customerAddress}
+              onChange={(e) => setCustomerAddress(e.target.value)}
+              placeholder="Masukkan alamat lengkap"
+              className="bg-background resize-none"
+              rows={2}
+              maxLength={300}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="customerPhone" className="text-sm flex items-center gap-2">
+              <Phone className="h-3 w-3" />
+              Nomor HP
+            </Label>
+            <Input
+              id="customerPhone"
+              type="tel"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              placeholder="Contoh: 08123456789"
+              className="bg-background"
+              maxLength={15}
+            />
           </div>
         </CardContent>
       </Card>
