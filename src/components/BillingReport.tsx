@@ -28,11 +28,13 @@ import {
   FileSpreadsheet,
   User,
   MapPin,
-  Phone
+  Phone,
+  Save
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import BillingHistory, { BillingRecord } from "./BillingHistory";
 
 interface BillingReportProps {
   usedGB: number;
@@ -50,7 +52,7 @@ const chartConfig = {
 };
 
 const STORAGE_KEY = "kendali-net-billing-customer";
-
+const HISTORY_KEY = "kendali-net-billing-history";
 export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
   const [pricePerGB, setPricePerGB] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -68,13 +70,22 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved).customerPhone ?? "" : "";
   });
+  const [billingHistory, setBillingHistory] = useState<BillingRecord[]>(() => {
+    const saved = localStorage.getItem(HISTORY_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
   const { toast } = useToast();
 
-  // Save to localStorage whenever customer data changes
+  // Save customer data to localStorage
   useEffect(() => {
     const data = { customerName, customerAddress, customerPhone, pricePerGB };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [customerName, customerAddress, customerPhone, pricePerGB]);
+
+  // Save billing history to localStorage
+  useEffect(() => {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(billingHistory));
+  }, [billingHistory]);
   
   // Note: Real billing data should come from API
   // For now, we'll show a message that this feature requires API data
@@ -104,12 +115,65 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
   };
 
   const currentDate = new Date();
+  const currentMonth = currentDate.toLocaleDateString('id-ID', { month: 'long' });
+  const currentYear = currentDate.getFullYear();
   const monthYear = currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const reportDate = currentDate.toLocaleDateString('id-ID', { 
     day: 'numeric', 
     month: 'long', 
     year: 'numeric' 
   });
+
+  const saveBillingRecord = () => {
+    // Check if record for this month already exists
+    const existingIndex = billingHistory.findIndex(
+      r => r.month === currentMonth && r.year === currentYear
+    );
+
+    const newRecord: BillingRecord = {
+      id: `${currentYear}-${currentMonth}-${Date.now()}`,
+      month: currentMonth,
+      year: currentYear,
+      monthYear,
+      customerName,
+      customerAddress,
+      customerPhone,
+      totalUsageGB: totalUsageThisMonth,
+      pricePerGB,
+      totalCost: estimatedCost,
+      savedAt: new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      // Update existing record
+      const updated = [...billingHistory];
+      updated[existingIndex] = newRecord;
+      setBillingHistory(updated);
+      toast({
+        title: "Tagihan Diperbarui",
+        description: `Data tagihan ${monthYear} berhasil diperbarui`,
+      });
+    } else {
+      // Add new record
+      setBillingHistory([newRecord, ...billingHistory]);
+      toast({
+        title: "Tagihan Disimpan",
+        description: `Data tagihan ${monthYear} berhasil disimpan ke riwayat`,
+      });
+    }
+  };
+
+  const deleteRecord = (id: string) => {
+    setBillingHistory(billingHistory.filter(r => r.id !== id));
+  };
+
+  const clearAllHistory = () => {
+    setBillingHistory([]);
+    toast({
+      title: "Riwayat Dihapus",
+      description: "Semua riwayat tagihan berhasil dihapus",
+    });
+  };
 
   const exportToCSV = () => {
     const csvContent = [
@@ -539,8 +603,24 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
               </div>
             </div>
           </div>
+
+          {/* Save Button */}
+          <Button 
+            onClick={saveBillingRecord}
+            className="w-full"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Simpan Tagihan Bulan Ini
+          </Button>
         </CardContent>
       </Card>
+
+      {/* Billing History */}
+      <BillingHistory 
+        records={billingHistory}
+        onDeleteRecord={deleteRecord}
+        onClearAll={clearAllHistory}
+      />
     </div>
   );
 }
