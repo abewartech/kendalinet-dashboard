@@ -1,5 +1,7 @@
 module("luci.controller.kendalinet", package.seeall)
 
+local SIMULATE = true -- Default simulation mode
+
 function index()
     entry({"admin", "kendalinet"}, firstchild(), "KendaliNet", 90).dependent = false
 
@@ -21,7 +23,7 @@ function api_status()
     local tx = wan.statistics and wan.statistics.tx_bytes or 0
 
     local data = {
-        speed = math.random(10, 100),   -- ganti nanti pakai sqm/iftop
+        speed = (SIMULATE or luci.http.formvalue("demo") == "1") and math.random(10, 100) or 0,
         rx_mb = math.floor(rx / 1024 / 1024),
         tx_mb = math.floor(tx / 1024 / 1024),
         online = true,
@@ -48,7 +50,7 @@ function api_devices()
                 ip = ip,
                 name = name or "unknown",
                 online = true,
-                bandwidth = math.random(1, 100)
+                bandwidth = (SIMULATE or luci.http.formvalue("demo") == "1") and math.random(1, 100) or 0
             }
         end
     end
@@ -64,10 +66,12 @@ function api_wifi()
 
     local ssid = uci:get("wireless", "default_radio0", "ssid")
     local hidden = uci:get("wireless", "default_radio0", "hidden")
+    local key = uci:get("wireless", "default_radio0", "key")
 
     local data = {
         ssid = ssid,
-        hidden = hidden == "1"
+        hidden = hidden == "1",
+        password = key
     }
 
     luci.http.prepare_content("application/json")
@@ -76,16 +80,23 @@ end
 
 -- API WIFI SETTINGS – Save
 function api_wifi_save()
+    -- Security check for POST requests
+    require("luci.dispatcher").test_post_security()
+
     local uci  = require "luci.model.uci".cursor()
     local http = require "luci.http"
     local json = require "luci.jsonc"
 
     local ssid   = http.formvalue("ssid")
     local hidden = http.formvalue("hidden")
+    local key    = http.formvalue("password")
 
     if ssid then
         uci:set("wireless", "default_radio0", "ssid", ssid)
         uci:set("wireless", "default_radio0", "hidden", hidden == "true" and "1" or "0")
+        if key then
+            uci:set("wireless", "default_radio0", "key", key)
+        end
         uci:commit("wireless")
 
         luci.sys.call("wifi reload >/dev/null")

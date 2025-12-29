@@ -13,7 +13,8 @@ const WiFiSettings = ({
   initialSSID,
   initialPassword,
   initialHidden,
-}: WiFiSettingsProps) => {
+  onSave,
+}: WiFiSettingsProps & { onSave?: (ssid: string, hidden: boolean, password?: string) => Promise<any> }) => {
   const [ssid, setSSID] = useState(initialSSID);
   const [password, setPassword] = useState(initialPassword);
   const [hideSSID, setHideSSID] = useState(initialHidden);
@@ -23,14 +24,31 @@ const WiFiSettings = ({
 
   const handleSave = async () => {
     setSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    if (onSave) {
+      const result = await onSave(ssid, hideSSID, password);
+      if (result && result.success) {
+        setSaved(true);
+        toast({
+          title: "Berhasil!",
+          description: "Pengaturan WiFi telah diperbarui.",
+        });
+      } else {
+        toast({
+          title: "Gagal",
+          description: result?.error || "Terjadi kesalahan saat menyimpan.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Simulate API call for demo mode
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setSaved(true);
+      toast({
+        title: "Berhasil (Simulasi)!",
+        description: "Pengaturan WiFi telah diperbarui.",
+      });
+    }
     setSaving(false);
-    setSaved(true);
-    toast({
-      title: "Berhasil!",
-      description: "Pengaturan WiFi telah diperbarui.",
-    });
     setTimeout(() => setSaved(false), 3000);
   };
 
@@ -128,11 +146,10 @@ const WiFiSettings = ({
       <button
         onClick={handleSave}
         disabled={saving}
-        className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-          saved
+        className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${saved
             ? "bg-success text-success-foreground"
             : "btn-primary-gradient hover:scale-[1.02] active:scale-[0.98]"
-        } ${saving ? "opacity-80" : ""}`}
+          } ${saving ? "opacity-80" : ""}`}
       >
         {saving ? (
           <>

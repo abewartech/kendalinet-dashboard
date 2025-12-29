@@ -15,6 +15,7 @@ import NetworkCleaner from "@/components/NetworkCleaner";
 import BillingReport from "@/components/BillingReport";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
+import { useLuciApi } from "@/hooks/useLuciApi";
 
 // Mock data for devices
 const initialDevices = [
@@ -89,7 +90,35 @@ const Index = () => {
   const [devices, setDevices] = useState(initialDevices);
   const [gameMode, setGameMode] = useState(false);
   const [whitelistMode, setWhitelistMode] = useState(false);
-  
+
+  const { status, devices: apiDevices, wifi: apiWifi, saveWifi } = useLuciApi(!simulationMode);
+
+  useEffect(() => {
+    if (!simulationMode && status) {
+      setDownloadSpeed(status.speed);
+      setUsedQuota(status.rx_mb);
+      // For real data, we might want to split or handle upload differently if API provides it
+    }
+  }, [status, simulationMode]);
+
+  useEffect(() => {
+    if (!simulationMode && apiDevices.length > 0) {
+      const mappedDevices = apiDevices.map((d, i) => ({
+        id: (i + 1).toString(),
+        name: d.name === "unknown" ? `Device ${d.mac.slice(-5)}` : d.name,
+        type: "phone" as const, // Default for now
+        ip: d.ip,
+        mac: d.mac,
+        connected: d.online,
+        downloadSpeed: d.bandwidth,
+        uploadSpeed: d.bandwidth * 0.2,
+        isWhitelisted: true,
+        isNew: false,
+      }));
+      setDevices(mappedDevices);
+    }
+  }, [apiDevices, simulationMode]);
+
   const { permission, isSupported, requestPermission, notifyIntruder } = useBrowserNotification();
 
   // Simulate new device connection notification
@@ -136,8 +165,8 @@ const Index = () => {
     setGameMode(!gameMode);
     toast({
       title: gameMode ? "Game Mode Dinonaktifkan" : "Game Mode Aktif",
-      description: gameMode 
-        ? "Konfigurasi jaringan kembali normal." 
+      description: gameMode
+        ? "Konfigurasi jaringan kembali normal."
         : "Prioritas gaming diaktifkan. Ping dioptimalkan!",
     });
   };
@@ -165,16 +194,16 @@ const Index = () => {
         prev.map((device) =>
           device.connected
             ? {
-                ...device,
-                downloadSpeed: Math.max(
-                  0,
-                  device.downloadSpeed + (Math.random() - 0.5) * 10
-                ),
-                uploadSpeed: Math.max(
-                  0,
-                  device.uploadSpeed + (Math.random() - 0.5) * 5
-                ),
-              }
+              ...device,
+              downloadSpeed: Math.max(
+                0,
+                device.downloadSpeed + (Math.random() - 0.5) * 10
+              ),
+              uploadSpeed: Math.max(
+                0,
+                device.uploadSpeed + (Math.random() - 0.5) * 5
+              ),
+            }
             : device
         )
       );
@@ -247,15 +276,14 @@ const Index = () => {
               </div>
             </div>
             <WaveAnimation speed={(downloadSpeed / 100) * 100} />
-            
+
             {/* Game Mode Button */}
             <button
               onClick={handleGameModeToggle}
-              className={`w-full mt-4 py-3 px-4 rounded-xl flex items-center justify-center gap-3 font-semibold transition-all duration-300 ${
-                gameMode
-                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_30px_hsl(280,80%,50%/0.4)] animate-pulse"
-                  : "bg-secondary hover:bg-secondary/80 text-foreground"
-              }`}
+              className={`w-full mt-4 py-3 px-4 rounded-xl flex items-center justify-center gap-3 font-semibold transition-all duration-300 ${gameMode
+                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_30px_hsl(280,80%,50%/0.4)] animate-pulse"
+                : "bg-secondary hover:bg-secondary/80 text-foreground"
+                }`}
             >
               <Gamepad2 className={`w-5 h-5 ${gameMode ? "animate-bounce" : ""}`} />
               <span>{gameMode ? "Game Mode Aktif" : "Aktifkan Game Mode"}</span>
@@ -293,9 +321,8 @@ const Index = () => {
               onClick={() => setActiveTab("keamanan")}
               className="glass-card p-4 slide-up flex items-center gap-3 hover:bg-secondary/50 transition-colors"
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                whitelistMode ? "bg-success/10" : "bg-warning/10"
-              }`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${whitelistMode ? "bg-success/10" : "bg-warning/10"
+                }`}>
                 <Shield className={`w-5 h-5 ${whitelistMode ? "text-success" : "text-warning"}`} />
               </div>
               <div className="text-left">
@@ -333,9 +360,10 @@ const Index = () => {
 
       {activeTab === "wifi" && (
         <WiFiSettings
-          initialSSID="KendaliNet_5G"
-          initialPassword="password123"
-          initialHidden={false}
+          initialSSID={apiWifi?.ssid || "KendaliNet_5G"}
+          initialPassword={apiWifi?.password || "password123"}
+          initialHidden={apiWifi?.hidden || false}
+          onSave={simulationMode ? undefined : saveWifi}
         />
       )}
 
