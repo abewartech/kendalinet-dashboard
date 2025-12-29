@@ -20,6 +20,7 @@ import { BandwidthLimiter } from "@/components/BandwidthLimiter";
 import { VoucherSystem } from "@/components/VoucherSystem";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
+import { useWebhookNotification } from "@/hooks/useWebhookNotification";
 import { useLuciApi } from "@/hooks/useLuciApi";
 import { useRouterManager } from "@/hooks/useRouterManager";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -99,6 +100,7 @@ const Index = () => {
   }, [apiDevices]);
 
   const { permission, isSupported, requestPermission, notifyIntruder } = useBrowserNotification();
+  const { sendWebhookNotification } = useWebhookNotification();
 
   // New device connection notification
   useEffect(() => {
@@ -112,8 +114,10 @@ const Index = () => {
       });
       // Send browser notification
       notifyIntruder(device.name, device.mac);
+      // Send webhook notification (for WhatsApp via n8n/Zapier)
+      sendWebhookNotification(device.name, device.mac, device.ip);
     }
-  }, [devices, whitelistMode, notifyIntruder]);
+  }, [devices, whitelistMode, notifyIntruder, sendWebhookNotification]);
 
   const handleWhitelistDevice = (id: string) => {
     setDevices((prev) =>
