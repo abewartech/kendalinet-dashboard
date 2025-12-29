@@ -21,6 +21,7 @@ import { VoucherSystem } from "@/components/VoucherSystem";
 import { DNSSettings } from "@/components/DNSSettings";
 import { DeviceGrouping } from "@/components/DeviceGrouping";
 import { DeviceUsageMonitor } from "@/components/DeviceUsageMonitor";
+import { SpeedTest } from "@/components/SpeedTest";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -362,6 +363,12 @@ const Index = () => {
               </div>
             </button>
           </div>
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "speedtest" && (
+        <div className="px-4">
+          <SpeedTest />
         </div>
       )}
 
