@@ -15,6 +15,8 @@ import NetworkCleaner from "@/components/NetworkCleaner";
 import BillingReport from "@/components/BillingReport";
 import RouterManagement from "@/components/RouterManagement";
 import MultiRouterDashboard from "@/components/MultiRouterDashboard";
+import { BandwidthLimiter } from "@/components/BandwidthLimiter";
+import { VoucherSystem } from "@/components/VoucherSystem";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useLuciApi } from "@/hooks/useLuciApi";
@@ -397,6 +399,18 @@ const Index = () => {
             onBlockDevice={(id) => handleBlockDevice(id, false)}
             onUnblockDevice={handleUnblockDevice}
           />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "bandwidth" && (
+        <div className="px-4">
+          <BandwidthLimiter />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "voucher" && (
+        <div className="px-4">
+          <VoucherSystem />
         </div>
       )}
 

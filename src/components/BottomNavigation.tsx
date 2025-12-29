@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -10,6 +10,8 @@ const navItems = [
   { id: "perangkat", label: "Perangkat", icon: Smartphone },
   { id: "keamanan", label: "Keamanan", icon: Shield },
   { id: "jadwal", label: "Jadwal", icon: Clock },
+  { id: "bandwidth", label: "Bandwidth", icon: Gauge },
+  { id: "voucher", label: "Voucher", icon: Ticket },
   { id: "optimasi", label: "Optimasi", icon: Sparkles },
   { id: "tagihan", label: "Tagihan", icon: Receipt },
   { id: "wifi", label: "WiFi", icon: Wifi },
