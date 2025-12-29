@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import RouterBackupRestore from './RouterBackupRestore';
 
 interface RouterManagementProps {
   open: boolean;
@@ -31,6 +32,7 @@ interface RouterManagementProps {
   onAddRouter: (router: Omit<RouterProfile, 'id' | 'isActive' | 'status'>) => void;
   onUpdateRouter: (id: string, updates: Partial<RouterProfile>) => void;
   onDeleteRouter: (id: string) => void;
+  onRestoreRouters: (routers: RouterProfile[]) => void;
 }
 
 interface RouterFormData {
@@ -53,7 +55,8 @@ const RouterManagement = ({
   routers,
   onAddRouter,
   onUpdateRouter,
-  onDeleteRouter
+  onDeleteRouter,
+  onRestoreRouters
 }: RouterManagementProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -282,6 +285,12 @@ const RouterManagement = ({
 
             {/* Add New Router Form */}
             {isAdding && !editingId && renderForm()}
+
+            {/* Backup & Restore Section */}
+            <RouterBackupRestore 
+              routers={routers} 
+              onRestoreRouters={onRestoreRouters} 
+            />
 
             {/* Add Router Button */}
             {!isAdding && !editingId && (

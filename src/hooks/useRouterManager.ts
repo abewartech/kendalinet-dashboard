@@ -80,6 +80,11 @@ export const useRouterManager = () => {
     );
   }, []);
 
+  // Restore routers from backup
+  const restoreRouters = useCallback((restoredRouters: RouterProfile[]) => {
+    setRouters(restoredRouters);
+  }, []);
+
   // Check router status
   const checkRouterStatus = useCallback(async (router: RouterProfile): Promise<RouterStatus> => {
     const baseUrl = `http://${router.ipAddress}`;
@@ -159,6 +164,7 @@ export const useRouterManager = () => {
     updateRouter,
     deleteRouter,
     switchRouter,
+    restoreRouters,
     checkRouterStatus,
     checkAllRoutersStatus,
     getActiveRouterBaseUrl
