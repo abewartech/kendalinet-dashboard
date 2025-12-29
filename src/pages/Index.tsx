@@ -32,8 +32,8 @@ const Index = () => {
     import.meta.env.VITE_API_METHOD === "luci"
       ? "luci"
       : import.meta.env.VITE_API_METHOD === "ubus"
-      ? "ubus"
-      : "cgi";
+        ? "ubus"
+        : "cgi";
 
   const {
     status,
@@ -171,11 +171,23 @@ const Index = () => {
       {/* Error Message when not connected */}
       {(error || (!loading && !isConnected)) && (
         <div className="px-4 pt-4">
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Koneksi Gagal</AlertTitle>
             <AlertDescription>
-              {error || "Tidak dapat terhubung ke router. Pastikan router terhubung dan API tersedia."}
+              <p className="mb-2">{error?.split('\n')[0] || "Tidak dapat terhubung ke router."}</p>
+              <div className="mt-3 p-3 bg-black/40 rounded-lg text-[10px] font-mono overflow-x-auto whitespace-pre border border-white/10 max-h-40 overflow-y-auto">
+                <p className="text-white/50 mb-1">--- DEBUG INFO ---</p>
+                {error || "No technical details available."}
+                {loading && "\nStill loading..."}
+                {!isConnected && "\nRouter status: DISCONNECTED"}
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-3 text-xs underline opacity-70 hover:opacity-100"
+              >
+                Coba Muat Ulang Halaman
+              </button>
             </AlertDescription>
           </Alert>
         </div>

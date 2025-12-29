@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
 import { ubusCall, getSystemInfo, getNetworkInterfaceStatus, getBoardInfo } from '@/lib/ubusApi';
 
-// Tentukan base URL router. Jika berjalan di Android APK (Capacitor),
-// gunakan IP absolut. Jika di browser development, gunakan path relatif (proxy).
-const ROUTER_IP = import.meta.env.VITE_ROUTER_IP || '192.168.2.1';
-const IS_CAPACITOR = window.location.protocol === 'http:' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') || window.location.protocol === 'capacitor:';
+// Tentukan base URL router.
+const ROUTER_DOMAIN = 'https://openwrt.monitoringmalaria.com';
 
-const BASE_URL = IS_CAPACITOR ? `http://${ROUTER_IP}` : '';
+// Deteksi lingkungan yang lebih kuat untuk Android APK (Capacitor)
+const IS_CAPACITOR =
+    // @ts-ignore
+    (window.Capacitor && window.Capacitor.isNative) ||
+    window.location.hostname === 'localhost' && !window.location.port.includes('80');
+
+const BASE_URL = IS_CAPACITOR ? ROUTER_DOMAIN : '';
 const API_BASE = `${BASE_URL}/cgi-bin/luci/admin/kendalinet/api`;
 const CGI_BASE = `${BASE_URL}/cgi-bin/kendalinet`;
+
+console.log(`[KendaliNet] Environment: ${IS_CAPACITOR ? 'Capacitor/Native' : 'Web/Proxy'} | Base: ${BASE_URL || '(Relative)'}`);
+
+if (IS_CAPACITOR) {
+    console.log(`[KendaliNet] Running in Capacitor mode. API Base: ${BASE_URL}`);
+}
 
 export type ApiMethod = 'ubus' | 'luci' | 'cgi';
 
@@ -26,13 +36,13 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     const [error, setError] = useState<string | null>(null);
 
     const fetchStatus = async () => {
+        const url = method === 'cgi' ? `${CGI_BASE}/status.sh` : `${API_BASE}/status`;
         try {
             setError(null);
             let data: any;
 
             if (method === 'ubus') {
                 try {
-                    // Use ubus API - future-proof method
                     const [systemInfo, wanStatus] = await Promise.all([
                         getSystemInfo(),
                         getNetworkInterfaceStatus('wan').catch(() => null)
@@ -42,91 +52,75 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                     const tx = wanStatus?.statistics?.tx_bytes || 0;
 
                     data = {
-                        speed: 0, // Speed calculation would need additional logic
+                        speed: 0,
                         rx_mb: Math.floor(rx / 1024 / 1024),
                         tx_mb: Math.floor(tx / 1024 / 1024),
                         online: wanStatus?.up || false,
                         uptime: systemInfo.uptime || 0
                     };
                 } catch (ubusErr: any) {
-                    // If ubus fails, try fallback to LuCI controller
                     console.warn('UBUS API failed, trying LuCI controller fallback:', ubusErr.message);
                     const res = await fetch(`${API_BASE}/status`);
-                    if (!res.ok) throw new Error('Failed to fetch status from LuCI controller');
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Fallback status failed`);
                     data = await res.json();
                 }
             } else if (method === 'cgi') {
-                // Use custom CGI scripts
-                const res = await fetch(`${CGI_BASE}/status.sh`);
-                if (!res.ok) throw new Error('Failed to fetch status');
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: status.sh failed`);
                 data = await res.json();
             } else {
-                // Legacy LuCI controller method
-                const res = await fetch(`${API_BASE}/status`);
-                if (!res.ok) throw new Error('Failed to fetch status');
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: API status failed`);
                 data = await res.json();
             }
 
             setStatus(data);
         } catch (err: any) {
-            const errorMessage = err.message || 'Failed to connect to router API';
-            setError(errorMessage);
-            console.error('Failed to fetch status:', errorMessage);
+            const errorMessage = `[Status] Fail: ${err.message} | Path: ${url}`;
+            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
+            console.error(errorMessage);
         }
     };
 
     const fetchDevices = async () => {
+        const url = method === 'cgi' || method === 'ubus' ? `${CGI_BASE}/devices.sh` : `${API_BASE}/devices`;
         try {
             setError(null);
             let data: any[];
 
-            if (method === 'cgi') {
-                // Use custom CGI scripts
-                const res = await fetch(`${CGI_BASE}/devices.sh`);
-                if (!res.ok) throw new Error('Failed to fetch devices');
-                data = await res.json();
-            } else if (method === 'ubus') {
-                // ubus doesn't directly expose DHCP leases, fallback to CGI
-                const res = await fetch(`${CGI_BASE}/devices.sh`);
-                if (!res.ok) throw new Error('Failed to fetch devices');
-                data = await res.json();
-            } else {
-                // Legacy LuCI controller method
-                const res = await fetch(`${API_BASE}/devices`);
-                if (!res.ok) throw new Error('Failed to fetch devices');
-                data = await res.json();
-            }
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch devices`);
+            data = await res.json();
 
             setDevices(data || []);
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch devices');
+            const errorMessage = `[Devices] Fail: ${err.message} | Path: ${url}`;
+            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
+            console.error(errorMessage);
             setDevices([]);
         }
     };
 
     const fetchWifi = async () => {
+        const url = method === 'cgi' ? `${CGI_BASE}/wifi.sh` : `${API_BASE}/wifi`;
         try {
             setError(null);
             let data: any;
 
-            if (method === 'cgi') {
-                const res = await fetch(`${CGI_BASE}/wifi.sh`);
-                if (!res.ok) throw new Error('Failed to fetch wifi');
-                data = await res.json();
-            } else {
-                // ubus doesn't have direct WiFi config, fallback to LuCI
-                const res = await fetch(`${API_BASE}/wifi`);
-                if (!res.ok) throw new Error('Failed to fetch wifi');
-                data = await res.json();
-            }
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch wifi`);
+            data = await res.json();
 
             setWifi(data);
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch wifi configuration');
+            const errorMessage = `[WiFi] Fail: ${err.message} | Path: ${url}`;
+            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
+            console.error(errorMessage);
         }
     };
 
     const fetchSystem = async () => {
+        const url = method === 'cgi' ? `${CGI_BASE}/system.sh` : `${API_BASE}/system`;
         try {
             setError(null);
             let data: any;
@@ -157,25 +151,24 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                     // If ubus fails, try fallback to LuCI controller
                     console.warn('UBUS API failed, trying LuCI controller fallback:', ubusErr.message);
                     const res = await fetch(`${API_BASE}/system`);
-                    if (!res.ok) throw new Error('Failed to fetch system info from LuCI controller');
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Fallback system failed`);
                     data = await res.json();
                 }
             } else if (method === 'cgi') {
-                const res = await fetch(`${CGI_BASE}/system.sh`);
-                if (!res.ok) throw new Error('Failed to fetch system info');
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: system.sh failed`);
                 data = await res.json();
             } else {
-                // Legacy LuCI controller method
-                const res = await fetch(`${API_BASE}/system`);
-                if (!res.ok) throw new Error('Failed to fetch system info');
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: API system failed`);
                 data = await res.json();
             }
 
             setSystem(data);
         } catch (err: any) {
-            const errorMessage = err.message || 'Failed to fetch system information';
-            setError(errorMessage);
-            console.error('Failed to fetch system info:', errorMessage);
+            const errorMessage = `[System] Fail: ${err.message} | Path: ${url}`;
+            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
+            console.error(errorMessage);
         }
     };
 
