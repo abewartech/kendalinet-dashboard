@@ -13,9 +13,12 @@ import AntiIntruder from "@/components/AntiIntruder";
 import ParentalControl from "@/components/ParentalControl";
 import NetworkCleaner from "@/components/NetworkCleaner";
 import BillingReport from "@/components/BillingReport";
+import RouterManagement from "@/components/RouterManagement";
+import MultiRouterDashboard from "@/components/MultiRouterDashboard";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useLuciApi } from "@/hooks/useLuciApi";
+import { useRouterManager } from "@/hooks/useRouterManager";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
@@ -26,6 +29,21 @@ const Index = () => {
   const [devices, setDevices] = useState<any[]>([]);
   const [gameMode, setGameMode] = useState(false);
   const [whitelistMode, setWhitelistMode] = useState(false);
+  const [showRouterManagement, setShowRouterManagement] = useState(false);
+  const [showMultiRouterDashboard, setShowMultiRouterDashboard] = useState(false);
+
+  // Multi-router management
+  const {
+    routers,
+    activeRouter,
+    routerStatuses,
+    isLoading: routerLoading,
+    addRouter,
+    updateRouter,
+    deleteRouter,
+    switchRouter,
+    checkAllRoutersStatus
+  } = useRouterManager();
 
   // Gunakan metode API dari environment, default ke 'cgi' (script status.sh/devices.sh/system.sh)
   const apiMethod =
@@ -128,7 +146,6 @@ const Index = () => {
     });
   };
 
-
   const handleBlockDevice = (id: string, showToast = true) => {
     setDevices((prev) =>
       prev.map((device) =>
@@ -159,6 +176,15 @@ const Index = () => {
     });
   };
 
+  const handleSwitchRouter = (id: string) => {
+    switchRouter(id);
+    setShowMultiRouterDashboard(false);
+    toast({
+      title: "Router Diubah",
+      description: `Beralih ke ${routers.find(r => r.id === id)?.name || 'router baru'}.`,
+    });
+  };
+
   const connectedDevicesCount = devices.filter((d) => d.connected).length;
 
   return (
@@ -166,10 +192,25 @@ const Index = () => {
       <StatusHeader
         isOnline={status?.online ?? false}
         uptime={status?.uptime ? `${Math.floor(status.uptime / 3600)}j ${Math.floor((status.uptime % 3600) / 60)}m` : "---"}
+        routers={routers}
+        activeRouter={activeRouter}
+        onSwitchRouter={handleSwitchRouter}
+        onManageRouters={() => setShowRouterManagement(true)}
+        onShowDashboard={() => setShowMultiRouterDashboard(true)}
+      />
+
+      {/* Router Management Dialog */}
+      <RouterManagement
+        open={showRouterManagement}
+        onOpenChange={setShowRouterManagement}
+        routers={routers}
+        onAddRouter={addRouter}
+        onUpdateRouter={updateRouter}
+        onDeleteRouter={deleteRouter}
       />
 
       {/* Error Message when not connected */}
-      {(error || (!loading && !isConnected)) && (
+      {(error || (!loading && !isConnected)) && !showMultiRouterDashboard && (
         <div className="px-4 pt-4">
           <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
             <AlertCircle className="h-4 w-4" />
@@ -181,6 +222,7 @@ const Index = () => {
                 {error || "No technical details available."}
                 {loading && "\nStill loading..."}
                 {!isConnected && "\nRouter status: DISCONNECTED"}
+                {activeRouter && `\nActive Router: ${activeRouter.name} (${activeRouter.ipAddress})`}
               </div>
               <button
                 onClick={() => window.location.reload()}
@@ -193,7 +235,29 @@ const Index = () => {
         </div>
       )}
 
-      {activeTab === "beranda" && (
+      {/* Multi Router Dashboard View */}
+      {showMultiRouterDashboard && (
+        <div className="space-y-4">
+          <div className="px-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Dashboard Multi Router</h2>
+            <button
+              onClick={() => setShowMultiRouterDashboard(false)}
+              className="text-sm text-primary hover:underline"
+            >
+              Kembali
+            </button>
+          </div>
+          <MultiRouterDashboard
+            routers={routers}
+            routerStatuses={routerStatuses}
+            isLoading={routerLoading}
+            onRefresh={checkAllRoutersStatus}
+            onSwitchRouter={handleSwitchRouter}
+          />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "beranda" && (
         <div className="px-4 space-y-6">
           {/* Speed Section */}
           <div className="glass-card-elevated p-6 slide-up">
@@ -281,7 +345,7 @@ const Index = () => {
         </div>
       )}
 
-      {activeTab === "perangkat" && (
+      {!showMultiRouterDashboard && activeTab === "perangkat" && (
         <div className="px-4 space-y-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold text-foreground">
@@ -303,7 +367,7 @@ const Index = () => {
         </div>
       )}
 
-      {activeTab === "wifi" && (
+      {!showMultiRouterDashboard && activeTab === "wifi" && (
         <WiFiSettings
           initialSSID={apiWifi?.ssid || ""}
           initialPassword={apiWifi?.password || ""}
@@ -312,7 +376,7 @@ const Index = () => {
         />
       )}
 
-      {activeTab === "keamanan" && (
+      {!showMultiRouterDashboard && activeTab === "keamanan" && (
         <div className="px-4">
           <AntiIntruder
             devices={devices}
@@ -324,7 +388,7 @@ const Index = () => {
         </div>
       )}
 
-      {activeTab === "jadwal" && (
+      {!showMultiRouterDashboard && activeTab === "jadwal" && (
         <div className="px-4">
           <ParentalControl
             devices={devices}
@@ -334,19 +398,19 @@ const Index = () => {
         </div>
       )}
 
-      {activeTab === "optimasi" && (
+      {!showMultiRouterDashboard && activeTab === "optimasi" && (
         <div className="px-4">
           <NetworkCleaner />
         </div>
       )}
 
-      {activeTab === "tagihan" && (
+      {!showMultiRouterDashboard && activeTab === "tagihan" && (
         <div className="px-4">
           <BillingReport usedGB={usedQuota} totalGB={100} />
         </div>
       )}
 
-      {activeTab === "admin" && (
+      {!showMultiRouterDashboard && activeTab === "admin" && (
         <AdminPanel
           systemData={system}
         />
