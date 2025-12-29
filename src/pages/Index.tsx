@@ -6,6 +6,7 @@ import WaveAnimation from "@/components/WaveAnimation";
 import QuotaCard from "@/components/QuotaCard";
 import DeviceCard from "@/components/DeviceCard";
 import WiFiSettings from "@/components/WiFiSettings";
+import WiFiQRCode from "@/components/WiFiQRCode";
 import AdminPanel from "@/components/AdminPanel";
 import BottomNavigation from "@/components/BottomNavigation";
 import SupportChatbot from "@/components/SupportChatbot";
@@ -378,6 +379,16 @@ const Index = () => {
           initialHidden={apiWifi?.hidden || false}
           onSave={saveWifi}
         />
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "qrcode" && (
+        <div className="px-4">
+          <WiFiQRCode
+            ssid={apiWifi?.ssid || ""}
+            password={apiWifi?.password || ""}
+            hidden={apiWifi?.hidden || false}
+          />
+        </div>
       )}
 
       {!showMultiRouterDashboard && activeTab === "keamanan" && (
