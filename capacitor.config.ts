@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'KendaliNet',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'http'
   }
 };
 

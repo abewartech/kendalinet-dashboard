@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ubusCall, getSystemInfo, getNetworkInterfaceStatus, getBoardInfo } from '@/lib/ubusApi';
 
-// Tentukan base URL router.
-const ROUTER_DOMAIN = 'https://openwrt.monitoringmalaria.com';
+// Tentukan base URL router (IP Lokal).
+const ROUTER_DOMAIN = 'http://192.168.2.1';
 
 // Deteksi lingkungan yang lebih kuat untuk Android APK (Capacitor)
 const IS_CAPACITOR =
