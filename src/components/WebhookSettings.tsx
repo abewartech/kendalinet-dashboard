@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Webhook, Send, ExternalLink, Info, CheckCircle, Loader2 } from "lucide-react";
+import { Webhook, Send, ExternalLink, Info, CheckCircle, Loader2, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
+import N8nWorkflowGuide from "./N8nWorkflowGuide";
 
 const WebhookSettings = () => {
   const { settings, isLoading, saveSettings, testWebhook } = useWebhookNotification();
@@ -118,7 +119,7 @@ const WebhookSettings = () => {
           {/* Quick Links */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs text-muted-foreground mb-2">Platform yang didukung:</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-3">
               <a
                 href="https://n8n.io"
                 target="_blank"
@@ -144,6 +145,16 @@ const WebhookSettings = () => {
                 Make <ExternalLink className="w-3 h-3" />
               </a>
             </div>
+
+            {/* n8n Guide Button */}
+            <N8nWorkflowGuide
+              trigger={
+                <button className="w-full py-2.5 rounded-xl bg-primary/10 text-primary font-medium text-sm hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Panduan Setup n8n + WhatsApp
+                </button>
+              }
+            />
           </div>
         </div>
       )}
