@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -19,6 +19,7 @@ const navItems = [
   { id: "optimasi", label: "Optimasi", icon: Sparkles },
   { id: "tagihan", label: "Tagihan", icon: Receipt },
   { id: "wifi", label: "WiFi", icon: Wifi },
+  { id: "guestwifi", label: "Guest", icon: UserPlus },
   { id: "qrcode", label: "QR Code", icon: QrCode },
   { id: "admin", label: "Admin", icon: Settings },
 ];
