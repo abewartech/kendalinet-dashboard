@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,12 +49,32 @@ const chartConfig = {
   },
 };
 
+const STORAGE_KEY = "kendali-net-billing-customer";
+
 export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
-  const [pricePerGB, setPricePerGB] = useState<number>(10000);
-  const [customerName, setCustomerName] = useState<string>("");
-  const [customerAddress, setCustomerAddress] = useState<string>("");
-  const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [pricePerGB, setPricePerGB] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved).pricePerGB ?? 10000 : 10000;
+  });
+  const [customerName, setCustomerName] = useState<string>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved).customerName ?? "" : "";
+  });
+  const [customerAddress, setCustomerAddress] = useState<string>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved).customerAddress ?? "" : "";
+  });
+  const [customerPhone, setCustomerPhone] = useState<string>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved).customerPhone ?? "" : "";
+  });
   const { toast } = useToast();
+
+  // Save to localStorage whenever customer data changes
+  useEffect(() => {
+    const data = { customerName, customerAddress, customerPhone, pricePerGB };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [customerName, customerAddress, customerPhone, pricePerGB]);
   
   // Note: Real billing data should come from API
   // For now, we'll show a message that this feature requires API data
