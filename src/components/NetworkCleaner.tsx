@@ -16,7 +16,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 interface NetworkCleanerProps {
-  simulationMode: boolean;
 }
 
 interface CleanupTask {
@@ -27,7 +26,7 @@ interface CleanupTask {
   status: 'pending' | 'running' | 'completed';
 }
 
-const NetworkCleaner: React.FC<NetworkCleanerProps> = ({ simulationMode }) => {
+const NetworkCleaner: React.FC<NetworkCleanerProps> = () => {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRebootEnabled, setAutoRebootEnabled] = useState(false);
@@ -74,15 +73,6 @@ const NetworkCleaner: React.FC<NetworkCleanerProps> = ({ simulationMode }) => {
   };
 
   const handleRefreshNetwork = async () => {
-    if (!simulationMode) {
-      toast({
-        title: "Mode Simulasi Diperlukan",
-        description: "Aktifkan mode simulasi untuk menjalankan fitur ini",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsRefreshing(true);
     
     // Reset all tasks to pending
@@ -197,7 +187,7 @@ const NetworkCleaner: React.FC<NetworkCleanerProps> = ({ simulationMode }) => {
 
         <Button 
           onClick={handleRefreshNetwork}
-          disabled={isRefreshing || !simulationMode}
+          disabled={isRefreshing}
           className="w-full gap-2"
           size="lg"
         >
@@ -220,12 +210,6 @@ const NetworkCleaner: React.FC<NetworkCleanerProps> = ({ simulationMode }) => {
               hour: '2-digit', 
               minute: '2-digit' 
             })}
-          </p>
-        )}
-
-        {!simulationMode && (
-          <p className="text-xs text-center text-amber-500">
-            ⚠️ Aktifkan mode simulasi di Admin Panel
           </p>
         )}
       </Card>

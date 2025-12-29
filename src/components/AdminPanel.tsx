@@ -13,12 +13,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 
 interface AdminPanelProps {
-  simulationMode: boolean;
-  onSimulationToggle: (enabled: boolean) => void;
   systemData?: any;
 }
 
-const AdminPanel = ({ simulationMode, onSimulationToggle, systemData }: AdminPanelProps) => {
+const AdminPanel = ({ systemData }: AdminPanelProps) => {
   const [restarting, setRestarting] = useState(false);
 
   const systemStats = {
@@ -91,31 +89,6 @@ const AdminPanel = ({ simulationMode, onSimulationToggle, systemData }: AdminPan
             <span className="text-xs text-muted-foreground">Firmware</span>
           </div>
           <p className="font-medium text-foreground">{systemStats.firmware}</p>
-        </div>
-      </div>
-
-      {/* Simulation Mode */}
-      <div
-        className="glass-card-elevated p-5 fade-in"
-        style={{ animationDelay: "0.1s" }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-              <Power className="w-5 h-5 text-warning" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">Mode Simulasi</h3>
-              <p className="text-xs text-muted-foreground">
-                Data kecepatan bergerak otomatis untuk demo
-              </p>
-            </div>
-          </div>
-          <Switch
-            checked={simulationMode}
-            onCheckedChange={onSimulationToggle}
-            className="data-[state=checked]:bg-warning"
-          />
         </div>
       </div>
 

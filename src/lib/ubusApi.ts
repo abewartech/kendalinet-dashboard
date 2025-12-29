@@ -47,41 +47,56 @@ export async function ubusCall<T = any>(
 ): Promise<T> {
   const sessionId = await getSessionId();
   
-  const response = await fetch('/ubus', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // Include cookies for session
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'call',
-      params: [sessionId, namespace, method, params],
-    }),
-  });
+  try {
+    const response = await fetch('/ubus', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies for session
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'call',
+        params: [sessionId, namespace, method, params],
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`ubus call failed: ${response.statusText}`);
-  }
-
-  const data: UbusResponse<T> = await response.json();
-
-  if (data.error) {
-    throw new Error(`ubus error: ${data.error.message}`);
-  }
-
-  // ubus returns result as [code, data]
-  // code 0 = success
-  if (data.result && Array.isArray(data.result) && data.result.length >= 2) {
-    const [code, resultData] = data.result;
-    if (code !== 0) {
-      throw new Error(`ubus call returned error code: ${code}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('UBUS API endpoint not found. Make sure you are accessing from the router or LuCI interface.');
+      }
+      throw new Error(`ubus call failed: ${response.status} ${response.statusText}`);
     }
-    return resultData as T;
-  }
 
-  throw new Error('Invalid ubus response format');
+    const data: UbusResponse<T> = await response.json();
+
+    if (data.error) {
+      throw new Error(`ubus error: ${data.error.message}`);
+    }
+
+    // ubus returns result as [code, data]
+    // code 0 = success
+    if (data.result && Array.isArray(data.result) && data.result.length >= 2) {
+      const [code, resultData] = data.result;
+      if (code !== 0) {
+        throw new Error(`ubus call returned error code: ${code}`);
+      }
+      return resultData as T;
+    }
+
+    throw new Error('Invalid ubus response format');
+  } catch (err: any) {
+    // Re-throw with more context if it's already an Error
+    if (err instanceof Error) {
+      throw err;
+    }
+    // Handle network errors (CORS, connection refused, etc.)
+    if (err.name === 'TypeError' || err.message?.includes('fetch')) {
+      throw new Error('Cannot connect to router API. Make sure you are accessing from the router network or LuCI interface.');
+    }
+    throw new Error(`ubus call failed: ${err.message || 'Unknown error'}`);
+  }
 }
 
 /**

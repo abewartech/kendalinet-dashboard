@@ -23,8 +23,17 @@ const WiFiSettings = ({
   const [saved, setSaved] = useState(false);
 
   const handleSave = async () => {
+    if (!onSave) {
+      toast({
+        title: "Gagal",
+        description: "API tidak tersedia. Pastikan router terhubung.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
-    if (onSave) {
+    try {
       const result = await onSave(ssid, hideSSID, password);
       if (result && result.success) {
         setSaved(true);
@@ -39,13 +48,11 @@ const WiFiSettings = ({
           variant: "destructive"
         });
       }
-    } else {
-      // Simulate API call for demo mode
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setSaved(true);
+    } catch (err: any) {
       toast({
-        title: "Berhasil (Simulasi)!",
-        description: "Pengaturan WiFi telah diperbarui.",
+        title: "Gagal",
+        description: err.message || "Terjadi kesalahan saat menyimpan.",
+        variant: "destructive"
       });
     }
     setSaving(false);

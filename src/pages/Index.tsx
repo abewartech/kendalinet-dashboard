@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2, Shield, Clock } from "lucide-react";
+import { Users, ArrowDownCircle, ArrowUpCircle, Gamepad2, Shield, Clock, AlertCircle } from "lucide-react";
 import StatusHeader from "@/components/StatusHeader";
 import SpeedometerGauge from "@/components/SpeedometerGauge";
 import WaveAnimation from "@/components/WaveAnimation";
@@ -16,93 +16,48 @@ import BillingReport from "@/components/BillingReport";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useLuciApi } from "@/hooks/useLuciApi";
-
-// Mock data for devices
-const initialDevices = [
-  {
-    id: "1",
-    name: "iPhone 14 Pro",
-    type: "phone" as const,
-    ip: "192.168.1.101",
-    mac: "AA:BB:CC:DD:EE:01",
-    connected: true,
-    downloadSpeed: 45.2,
-    uploadSpeed: 12.8,
-    isWhitelisted: true,
-    isNew: false,
-  },
-  {
-    id: "2",
-    name: "MacBook Pro",
-    type: "laptop" as const,
-    ip: "192.168.1.102",
-    mac: "AA:BB:CC:DD:EE:02",
-    connected: true,
-    downloadSpeed: 78.5,
-    uploadSpeed: 25.3,
-    isWhitelisted: true,
-    isNew: false,
-  },
-  {
-    id: "3",
-    name: "Samsung TV",
-    type: "desktop" as const,
-    ip: "192.168.1.103",
-    mac: "AA:BB:CC:DD:EE:03",
-    connected: true,
-    downloadSpeed: 32.1,
-    uploadSpeed: 5.4,
-    isWhitelisted: false,
-    isNew: false,
-  },
-  {
-    id: "4",
-    name: "iPad Mini",
-    type: "tablet" as const,
-    ip: "192.168.1.104",
-    mac: "AA:BB:CC:DD:EE:04",
-    connected: false,
-    downloadSpeed: 0,
-    uploadSpeed: 0,
-    isWhitelisted: false,
-    isNew: false,
-  },
-  {
-    id: "5",
-    name: "Unknown Device",
-    type: "phone" as const,
-    ip: "192.168.1.105",
-    mac: "XX:YY:ZZ:AA:BB:05",
-    connected: true,
-    downloadSpeed: 15.3,
-    uploadSpeed: 4.2,
-    isWhitelisted: false,
-    isNew: true,
-  },
-];
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("beranda");
-  const [downloadSpeed, setDownloadSpeed] = useState(87.4);
-  const [uploadSpeed, setUploadSpeed] = useState(34.2);
-  const [usedQuota, setUsedQuota] = useState(45.8);
-  const [simulationMode, setSimulationMode] = useState(true);
-  const [devices, setDevices] = useState(initialDevices);
+  const [downloadSpeed, setDownloadSpeed] = useState(0);
+  const [uploadSpeed, setUploadSpeed] = useState(0);
+  const [usedQuota, setUsedQuota] = useState(0);
+  const [devices, setDevices] = useState<any[]>([]);
   const [gameMode, setGameMode] = useState(false);
   const [whitelistMode, setWhitelistMode] = useState(false);
 
-  const { status, devices: apiDevices, wifi: apiWifi, system, saveWifi } = useLuciApi(!simulationMode);
+  // Gunakan metode API dari environment, default ke 'cgi' (script status.sh/devices.sh/system.sh)
+  const apiMethod =
+    import.meta.env.VITE_API_METHOD === "luci"
+      ? "luci"
+      : import.meta.env.VITE_API_METHOD === "ubus"
+      ? "ubus"
+      : "cgi";
+
+  const {
+    status,
+    devices: apiDevices,
+    wifi: apiWifi,
+    system,
+    saveWifi,
+    loading,
+    error,
+  } = useLuciApi(true, apiMethod);
+
+  // Check if API is connected
+  const isConnected = !error && !loading && (status !== null || apiDevices.length > 0);
 
   useEffect(() => {
-    if (!simulationMode && status) {
-      setDownloadSpeed(status.speed);
-      setUsedQuota(status.rx_mb);
-      // For real data, we might want to split or handle upload differently if API provides it
+    if (status) {
+      setDownloadSpeed(status.speed || 0);
+      setUploadSpeed(status.tx_mb ? (status.tx_mb / 1024) : 0); // Convert MB to approximate speed
+      setUsedQuota(status.rx_mb || 0);
     }
-  }, [status, simulationMode]);
+  }, [status]);
 
   useEffect(() => {
-    if (!simulationMode && apiDevices.length > 0) {
+    if (apiDevices.length > 0) {
       const mappedDevices = apiDevices.map((d, i) => ({
         id: (i + 1).toString(),
         name: d.name === "unknown" ? `Device ${d.mac.slice(-5)}` : d.name,
@@ -110,18 +65,20 @@ const Index = () => {
         ip: d.ip,
         mac: d.mac,
         connected: d.online,
-        downloadSpeed: d.bandwidth,
-        uploadSpeed: d.bandwidth * 0.2,
+        downloadSpeed: d.bandwidth || 0,
+        uploadSpeed: (d.bandwidth || 0) * 0.2,
         isWhitelisted: true,
         isNew: false,
       }));
       setDevices(mappedDevices);
+    } else {
+      setDevices([]);
     }
-  }, [apiDevices, simulationMode]);
+  }, [apiDevices]);
 
   const { permission, isSupported, requestPermission, notifyIntruder } = useBrowserNotification();
 
-  // Simulate new device connection notification
+  // New device connection notification
   useEffect(() => {
     const newDevices = devices.filter((d) => d.isNew && d.connected);
     if (newDevices.length > 0 && whitelistMode) {
@@ -134,7 +91,7 @@ const Index = () => {
       // Send browser notification
       notifyIntruder(device.name, device.mac);
     }
-  }, []);
+  }, [devices, whitelistMode, notifyIntruder]);
 
   const handleWhitelistDevice = (id: string) => {
     setDevices((prev) =>
@@ -171,46 +128,6 @@ const Index = () => {
     });
   };
 
-  // Simulation effect for demo mode
-  useEffect(() => {
-    if (!simulationMode) return;
-
-    const interval = setInterval(() => {
-      setDownloadSpeed((prev) => {
-        const change = (Math.random() - 0.5) * 20;
-        return Math.max(10, Math.min(100, prev + change));
-      });
-      setUploadSpeed((prev) => {
-        const change = (Math.random() - 0.5) * 10;
-        return Math.max(5, Math.min(50, prev + change));
-      });
-      setUsedQuota((prev) => {
-        const change = Math.random() * 0.05;
-        return Math.min(99, prev + change);
-      });
-
-      // Update device speeds randomly
-      setDevices((prev) =>
-        prev.map((device) =>
-          device.connected
-            ? {
-              ...device,
-              downloadSpeed: Math.max(
-                0,
-                device.downloadSpeed + (Math.random() - 0.5) * 10
-              ),
-              uploadSpeed: Math.max(
-                0,
-                device.uploadSpeed + (Math.random() - 0.5) * 5
-              ),
-            }
-            : device
-        )
-      );
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [simulationMode]);
 
   const handleBlockDevice = (id: string, showToast = true) => {
     setDevices((prev) =>
@@ -247,9 +164,22 @@ const Index = () => {
   return (
     <div className="min-h-screen pb-24">
       <StatusHeader
-        isOnline={simulationMode ? true : (status?.online ?? true)}
-        uptime={simulationMode ? "12 Jam 34 Menit" : (status?.uptime ? `${Math.floor(status.uptime / 3600)}j ${Math.floor((status.uptime % 3600) / 60)}m` : "---")}
+        isOnline={status?.online ?? false}
+        uptime={status?.uptime ? `${Math.floor(status.uptime / 3600)}j ${Math.floor((status.uptime % 3600) / 60)}m` : "---"}
       />
+
+      {/* Error Message when not connected */}
+      {(error || (!loading && !isConnected)) && (
+        <div className="px-4 pt-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Koneksi Gagal</AlertTitle>
+            <AlertDescription>
+              {error || "Tidak dapat terhubung ke router. Pastikan router terhubung dan API tersedia."}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
 
       {activeTab === "beranda" && (
         <div className="px-4 space-y-6">
@@ -363,10 +293,10 @@ const Index = () => {
 
       {activeTab === "wifi" && (
         <WiFiSettings
-          initialSSID={apiWifi?.ssid || "KendaliNet_5G"}
-          initialPassword={apiWifi?.password || "password123"}
+          initialSSID={apiWifi?.ssid || ""}
+          initialPassword={apiWifi?.password || ""}
           initialHidden={apiWifi?.hidden || false}
-          onSave={simulationMode ? undefined : saveWifi}
+          onSave={saveWifi}
         />
       )}
 
@@ -394,7 +324,7 @@ const Index = () => {
 
       {activeTab === "optimasi" && (
         <div className="px-4">
-          <NetworkCleaner simulationMode={simulationMode} />
+          <NetworkCleaner />
         </div>
       )}
 
@@ -406,9 +336,7 @@ const Index = () => {
 
       {activeTab === "admin" && (
         <AdminPanel
-          simulationMode={simulationMode}
-          onSimulationToggle={setSimulationMode}
-          systemData={simulationMode ? undefined : system}
+          systemData={system}
         />
       )}
 

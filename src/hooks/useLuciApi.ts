@@ -11,7 +11,7 @@ export interface UseLuciApiOptions {
     method?: ApiMethod;
 }
 
-export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'ubus') => {
+export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') => {
     const [status, setStatus] = useState<any>(null);
     const [devices, setDevices] = useState<any[]>([]);
     const [wifi, setWifi] = useState<any>(null);
@@ -21,25 +21,34 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'ubus') 
 
     const fetchStatus = async () => {
         try {
+            setError(null);
             let data: any;
 
             if (method === 'ubus') {
-                // Use ubus API - future-proof method
-                const [systemInfo, wanStatus] = await Promise.all([
-                    getSystemInfo(),
-                    getNetworkInterfaceStatus('wan').catch(() => null)
-                ]);
+                try {
+                    // Use ubus API - future-proof method
+                    const [systemInfo, wanStatus] = await Promise.all([
+                        getSystemInfo(),
+                        getNetworkInterfaceStatus('wan').catch(() => null)
+                    ]);
 
-                const rx = wanStatus?.statistics?.rx_bytes || 0;
-                const tx = wanStatus?.statistics?.tx_bytes || 0;
+                    const rx = wanStatus?.statistics?.rx_bytes || 0;
+                    const tx = wanStatus?.statistics?.tx_bytes || 0;
 
-                data = {
-                    speed: 0, // Speed calculation would need additional logic
-                    rx_mb: Math.floor(rx / 1024 / 1024),
-                    tx_mb: Math.floor(tx / 1024 / 1024),
-                    online: wanStatus?.up || false,
-                    uptime: systemInfo.uptime || 0
-                };
+                    data = {
+                        speed: 0, // Speed calculation would need additional logic
+                        rx_mb: Math.floor(rx / 1024 / 1024),
+                        tx_mb: Math.floor(tx / 1024 / 1024),
+                        online: wanStatus?.up || false,
+                        uptime: systemInfo.uptime || 0
+                    };
+                } catch (ubusErr: any) {
+                    // If ubus fails, try fallback to LuCI controller
+                    console.warn('UBUS API failed, trying LuCI controller fallback:', ubusErr.message);
+                    const res = await fetch(`${API_BASE}/status`);
+                    if (!res.ok) throw new Error('Failed to fetch status from LuCI controller');
+                    data = await res.json();
+                }
             } else if (method === 'cgi') {
                 // Use custom CGI scripts
                 const res = await fetch(`${CGI_BASE}/status.sh`);
@@ -54,18 +63,25 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'ubus') 
 
             setStatus(data);
         } catch (err: any) {
-            setError(err.message);
+            const errorMessage = err.message || 'Failed to connect to router API';
+            setError(errorMessage);
+            console.error('Failed to fetch status:', errorMessage);
         }
     };
 
     const fetchDevices = async () => {
         try {
+            setError(null);
             let data: any[];
 
-            if (method === 'ubus' || method === 'cgi') {
-                // For ubus/cgi, use custom endpoint (ubus doesn't directly expose DHCP leases)
-                const endpoint = method === 'cgi' ? `${CGI_BASE}/devices.sh` : `${CGI_BASE}/devices.sh`;
-                const res = await fetch(endpoint);
+            if (method === 'cgi') {
+                // Use custom CGI scripts
+                const res = await fetch(`${CGI_BASE}/devices.sh`);
+                if (!res.ok) throw new Error('Failed to fetch devices');
+                data = await res.json();
+            } else if (method === 'ubus') {
+                // ubus doesn't directly expose DHCP leases, fallback to CGI
+                const res = await fetch(`${CGI_BASE}/devices.sh`);
                 if (!res.ok) throw new Error('Failed to fetch devices');
                 data = await res.json();
             } else {
@@ -75,14 +91,16 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'ubus') 
                 data = await res.json();
             }
 
-            setDevices(data);
+            setDevices(data || []);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Failed to fetch devices');
+            setDevices([]);
         }
     };
 
     const fetchWifi = async () => {
         try {
+            setError(null);
             let data: any;
 
             if (method === 'cgi') {
@@ -98,35 +116,44 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'ubus') 
 
             setWifi(data);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Failed to fetch wifi configuration');
         }
     };
 
     const fetchSystem = async () => {
         try {
+            setError(null);
             let data: any;
 
             if (method === 'ubus') {
-                // Use ubus API for system info
-                const [systemInfo, boardInfo] = await Promise.all([
-                    getSystemInfo(),
-                    getBoardInfo().catch(() => ({}))
-                ]);
+                try {
+                    // Use ubus API for system info
+                    const [systemInfo, boardInfo] = await Promise.all([
+                        getSystemInfo(),
+                        getBoardInfo().catch(() => ({}))
+                    ]);
 
-                const memory = systemInfo.memory || {};
-                const total_mem = memory.total || 0;
-                const available_mem = memory.available || memory.free || 0;
-                const used_mem = total_mem - available_mem;
-                const mem_percent = total_mem > 0 ? Math.floor((used_mem / total_mem) * 100) : 0;
+                    const memory = systemInfo.memory || {};
+                    const total_mem = memory.total || 0;
+                    const available_mem = memory.available || memory.free || 0;
+                    const used_mem = total_mem - available_mem;
+                    const mem_percent = total_mem > 0 ? Math.floor((used_mem / total_mem) * 100) : 0;
 
-                data = {
-                    model: boardInfo.model || 'OpenWrt Device',
-                    firmware: boardInfo.release?.description || 'OpenWrt',
-                    cpu_load: systemInfo.load?.[0] ? (systemInfo.load[0] / 65536).toFixed(2) : '0.00',
-                    memory_percent: mem_percent,
-                    uptime: systemInfo.uptime || 0,
-                    hostname: boardInfo.hostname || 'OpenWrt'
-                };
+                    data = {
+                        model: boardInfo.model || 'OpenWrt Device',
+                        firmware: boardInfo.release?.description || 'OpenWrt',
+                        cpu_load: systemInfo.load?.[0] ? (systemInfo.load[0] / 65536).toFixed(2) : '0.00',
+                        memory_percent: mem_percent,
+                        uptime: systemInfo.uptime || 0,
+                        hostname: boardInfo.hostname || 'OpenWrt'
+                    };
+                } catch (ubusErr: any) {
+                    // If ubus fails, try fallback to LuCI controller
+                    console.warn('UBUS API failed, trying LuCI controller fallback:', ubusErr.message);
+                    const res = await fetch(`${API_BASE}/system`);
+                    if (!res.ok) throw new Error('Failed to fetch system info from LuCI controller');
+                    data = await res.json();
+                }
             } else if (method === 'cgi') {
                 const res = await fetch(`${CGI_BASE}/system.sh`);
                 if (!res.ok) throw new Error('Failed to fetch system info');
@@ -140,7 +167,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'ubus') 
 
             setSystem(data);
         } catch (err: any) {
-            setError(err.message);
+            const errorMessage = err.message || 'Failed to fetch system information';
+            setError(errorMessage);
+            console.error('Failed to fetch system info:', errorMessage);
         }
     };
 

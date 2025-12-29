@@ -21,35 +21,18 @@ import {
   TrendingUp, 
   Calendar, 
   Wallet,
-  BarChart3
+  BarChart3,
+  AlertCircle
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface BillingReportProps {
   usedGB: number;
   totalGB: number;
 }
 
-// Generate mock data for last 30 days
-const generateUsageData = () => {
-  const data = [];
-  const today = new Date();
-  
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    
-    // Random usage between 0.5 and 4 GB per day
-    const usage = Math.random() * 3.5 + 0.5;
-    
-    data.push({
-      date: date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
-      fullDate: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }),
-      usage: parseFloat(usage.toFixed(2)),
-    });
-  }
-  
-  return data;
-};
+// Note: Billing data would need to come from API
+// For now, showing empty state when no data available
 
 const chartConfig = {
   usage: {
@@ -60,11 +43,13 @@ const chartConfig = {
 
 export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
   const [pricePerGB, setPricePerGB] = useState<number>(10000);
-  const usageData = useMemo(() => generateUsageData(), []);
+  // Note: Real billing data should come from API
+  // For now, we'll show a message that this feature requires API data
+  const hasBillingData = false; // This should be set based on API availability
   
-  const totalUsageThisMonth = useMemo(() => {
-    return usageData.reduce((sum, day) => sum + day.usage, 0);
-  }, [usageData]);
+  const usageData: any[] = []; // Empty array - would be populated from API
+  
+  const totalUsageThisMonth = usedGB || 0;
   
   const estimatedCost = useMemo(() => {
     return totalUsageThisMonth * pricePerGB;
@@ -74,9 +59,7 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
     return totalUsageThisMonth / 30;
   }, [totalUsageThisMonth]);
   
-  const peakUsage = useMemo(() => {
-    return Math.max(...usageData.map(d => d.usage));
-  }, [usageData]);
+  const peakUsage = 0; // Would come from API data
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -103,6 +86,17 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
           </p>
         </CardContent>
       </Card>
+
+      {/* Error message when no billing data available */}
+      {!hasBillingData && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Data Tidak Tersedia</AlertTitle>
+          <AlertDescription>
+            Data tagihan tidak tersedia. Pastikan router terhubung dan API menyediakan data billing.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3">
@@ -132,63 +126,74 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
       </div>
 
       {/* Usage Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center justify-between text-base">
-            <span className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              Pemakaian 30 Hari Terakhir
-            </span>
-            <Badge variant="secondary" className="text-xs">
-              Puncak: {peakUsage.toFixed(1)} GB
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={usageData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="usageGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={6}
-                  className="text-muted-foreground"
-                />
-                <YAxis 
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value}GB`}
-                  className="text-muted-foreground"
-                />
-                <ChartTooltip 
-                  content={
-                    <ChartTooltipContent 
-                      formatter={(value) => [`${value} GB`, "Pemakaian"]}
-                    />
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="usage"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  fill="url(#usageGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+      {hasBillingData && usageData.length > 0 ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-base">
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                Pemakaian 30 Hari Terakhir
+              </span>
+              <Badge variant="secondary" className="text-xs">
+                Puncak: {peakUsage.toFixed(1)} GB
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={usageData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="usageGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={6}
+                    className="text-muted-foreground"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}GB`}
+                    className="text-muted-foreground"
+                  />
+                  <ChartTooltip 
+                    content={
+                      <ChartTooltipContent 
+                        formatter={(value) => [`${value} GB`, "Pemakaian"]}
+                      />
+                    }
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="usage"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    fill="url(#usageGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-sm text-muted-foreground">
+              Data pemakaian harian tidak tersedia
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cost Estimation */}
       <Card>
