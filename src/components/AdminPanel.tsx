@@ -15,18 +15,19 @@ import { toast } from "@/hooks/use-toast";
 interface AdminPanelProps {
   simulationMode: boolean;
   onSimulationToggle: (enabled: boolean) => void;
+  systemData?: any;
 }
 
-const AdminPanel = ({ simulationMode, onSimulationToggle }: AdminPanelProps) => {
+const AdminPanel = ({ simulationMode, onSimulationToggle, systemData }: AdminPanelProps) => {
   const [restarting, setRestarting] = useState(false);
 
   const systemStats = {
-    cpu: 23,
-    memory: 45,
-    temperature: 52,
-    uptime: "12 Jam 34 Menit",
-    firmware: "OpenWrt 23.05.2",
-    model: "TP-Link Archer C7 v5",
+    cpu: systemData?.cpu_load ? Math.min(100, Math.floor(parseFloat(systemData.cpu_load) * 20)) : 23, // Simple mapping for demo
+    memory: systemData?.memory_percent || 45,
+    temperature: 52, // Temperature might need another ubus call or isn't always available
+    uptime: systemData?.uptime ? `${Math.floor(systemData.uptime / 3600)} Jam ${Math.floor((systemData.uptime % 3600) / 60)} Menit` : "12 Jam 34 Menit",
+    firmware: systemData?.firmware || "OpenWrt 23.05.2",
+    model: systemData?.model || "TP-Link Archer C7 v5",
   };
 
   const handleRestart = async () => {

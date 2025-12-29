@@ -6,6 +6,7 @@ export const useLuciApi = (enabled: boolean) => {
     const [status, setStatus] = useState<any>(null);
     const [devices, setDevices] = useState<any[]>([]);
     const [wifi, setWifi] = useState<any>(null);
+    const [system, setSystem] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +43,17 @@ export const useLuciApi = (enabled: boolean) => {
         }
     };
 
+    const fetchSystem = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/system`);
+            if (!res.ok) throw new Error('Failed to fetch system info');
+            const data = await res.json();
+            setSystem(data);
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
     const saveWifi = async (ssid: string, hidden: boolean, password?: string) => {
         try {
             const formData = new FormData();
@@ -68,7 +80,7 @@ export const useLuciApi = (enabled: boolean) => {
 
         setLoading(true);
         const loadData = async () => {
-            await Promise.all([fetchStatus(), fetchDevices(), fetchWifi()]);
+            await Promise.all([fetchStatus(), fetchDevices(), fetchWifi(), fetchSystem()]);
             setLoading(false);
         };
 
@@ -77,10 +89,11 @@ export const useLuciApi = (enabled: boolean) => {
         const interval = setInterval(() => {
             fetchStatus();
             fetchDevices();
+            fetchSystem();
         }, 5000);
 
         return () => clearInterval(interval);
     }, [enabled]);
 
-    return { status, devices, wifi, loading, error, fetchStatus, fetchDevices, fetchWifi, saveWifi };
+    return { status, devices, wifi, system, loading, error, fetchStatus, fetchDevices, fetchWifi, fetchSystem, saveWifi };
 };

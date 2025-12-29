@@ -91,7 +91,7 @@ const Index = () => {
   const [gameMode, setGameMode] = useState(false);
   const [whitelistMode, setWhitelistMode] = useState(false);
 
-  const { status, devices: apiDevices, wifi: apiWifi, saveWifi } = useLuciApi(!simulationMode);
+  const { status, devices: apiDevices, wifi: apiWifi, system, saveWifi } = useLuciApi(!simulationMode);
 
   useEffect(() => {
     if (!simulationMode && status) {
@@ -246,7 +246,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-24">
-      <StatusHeader isOnline={true} uptime="12 Jam 34 Menit" />
+      <StatusHeader
+        isOnline={simulationMode ? true : (status?.online ?? true)}
+        uptime={simulationMode ? "12 Jam 34 Menit" : (status?.uptime ? `${Math.floor(status.uptime / 3600)}j ${Math.floor((status.uptime % 3600) / 60)}m` : "---")}
+      />
 
       {activeTab === "beranda" && (
         <div className="px-4 space-y-6">
@@ -405,6 +408,7 @@ const Index = () => {
         <AdminPanel
           simulationMode={simulationMode}
           onSimulationToggle={setSimulationMode}
+          systemData={simulationMode ? undefined : system}
         />
       )}
 

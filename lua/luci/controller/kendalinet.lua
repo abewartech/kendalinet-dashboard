@@ -9,6 +9,7 @@ function index()
     entry({"admin", "kendalinet", "api", "devices"}, call("api_devices")).leaf = true
     entry({"admin", "kendalinet", "api", "wifi"}, call("api_wifi")).leaf = true
     entry({"admin", "kendalinet", "api", "wifi_save"}, call("api_wifi_save")).leaf = true
+    entry({"admin", "kendalinet", "api", "system"}, call("api_system")).leaf = true
 end
 
 -- API BERANDA – Speedometer & Kuota
@@ -108,4 +109,46 @@ function api_wifi_save()
         luci.http.prepare_content("application/json")
         luci.http.write(json.stringify({ error = "Missing SSID" }))
     end
+end
+
+-- API SYSTEM – System Info
+function api_system()
+    local sys    = require "luci.sys"
+    local json   = require "luci.jsonc"
+    local ubus   = require "luci.ubus".connect()
+    
+    local board_info = ubus:call("system", "board", {}) or {}
+    
+    -- Parse memory from /proc/meminfo or free command
+    local total_mem, free_mem = 0, 0
+    local f = io.open("/proc/meminfo", "r")
+    if f then
+        for line in f:lines() do
+            local k, v = line:match("(%w+):%s+(%d+)")
+            if k == "MemTotal" then total_mem = tonumber(v)
+            elseif k == "MemAvailable" or k == "MemFree" then free_mem = tonumber(v) end
+        end
+        f:close()
+    end
+    
+    local used_mem = total_mem - free_mem
+    local mem_percent = (total_mem > 0) and math.floor((used_mem / total_mem) * 100) or 0
+    
+    local data = {
+        model = board_info.model or "OpenWrt Device",
+        firmware = (board_info.release and board_info.release.description) or "OpenWrt",
+        cpu_load = string.format("%.2f", collectgarbage("count") / 1024), -- Simulated load or internal Lua memory
+        memory_percent = mem_percent,
+        uptime = sys.uptime(),
+        hostname = board_info.hostname or "OpenWrt"
+    }
+
+    -- Get real CPU load if possible
+    local load = sys.loadavg()
+    if load then
+        data.cpu_load = string.format("%.2f", load)
+    end
+
+    luci.http.prepare_content("application/json")
+    luci.http.write(json.stringify(data))
 end
