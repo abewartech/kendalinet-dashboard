@@ -3,6 +3,7 @@ import { Shield, ShieldCheck, ShieldAlert, Bell, UserCheck, UserX, BellRing } fr
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
+import WebhookSettings from "./WebhookSettings";
 
 interface Device {
   id: string;
@@ -263,6 +264,9 @@ const AntiIntruder = ({
           </div>
         </div>
       )}
+
+      {/* Webhook Settings for WhatsApp Notifications */}
+      <WebhookSettings />
     </div>
   );
 };
