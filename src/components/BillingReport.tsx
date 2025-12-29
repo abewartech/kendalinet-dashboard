@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   ChartContainer, 
   ChartTooltip, 
@@ -22,9 +23,13 @@ import {
   Calendar, 
   Wallet,
   BarChart3,
-  AlertCircle
+  AlertCircle,
+  Download,
+  FileText,
+  FileSpreadsheet
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 interface BillingReportProps {
   usedGB: number;
@@ -43,6 +48,8 @@ const chartConfig = {
 
 export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
   const [pricePerGB, setPricePerGB] = useState<number>(10000);
+  const { toast } = useToast();
+  
   // Note: Real billing data should come from API
   // For now, we'll show a message that this feature requires API data
   const hasBillingData = false; // This should be set based on API availability
@@ -70,6 +77,157 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
     }).format(value);
   };
 
+  const currentDate = new Date();
+  const monthYear = currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const reportDate = currentDate.toLocaleDateString('id-ID', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+
+  const exportToCSV = () => {
+    const csvContent = [
+      ['LAPORAN TAGIHAN INTERNET'],
+      ['Periode', monthYear],
+      ['Tanggal Export', reportDate],
+      [''],
+      ['RINGKASAN PEMAKAIAN'],
+      ['Total Pemakaian', `${totalUsageThisMonth.toFixed(2)} GB`],
+      ['Rata-rata Harian', `${averageDaily.toFixed(2)} GB`],
+      ['Harga per GB', `Rp ${pricePerGB.toLocaleString('id-ID')}`],
+      [''],
+      ['ESTIMASI BIAYA'],
+      ['Total Estimasi', `Rp ${estimatedCost.toLocaleString('id-ID')}`],
+      ['Proyeksi Akhir Bulan', `Rp ${(averageDaily * 30 * pricePerGB).toLocaleString('id-ID')}`],
+      [''],
+      ['DETAIL PEMAKAIAN HARIAN'],
+      ['Tanggal', 'Pemakaian (GB)'],
+      ...usageData.map(item => [item.date, item.usage.toFixed(2)])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `laporan-tagihan-${monthYear.replace(' ', '-')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export Berhasil",
+      description: "Laporan CSV berhasil diunduh",
+    });
+  };
+
+  const exportToPDF = () => {
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Tagihan Internet - ${monthYear}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0066cc; padding-bottom: 20px; }
+          .header h1 { color: #0066cc; margin: 0; font-size: 24px; }
+          .header p { margin: 5px 0; color: #666; }
+          .section { margin-bottom: 25px; }
+          .section-title { font-size: 16px; font-weight: bold; color: #0066cc; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+          .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+          .summary-item { background: #f5f5f5; padding: 15px; border-radius: 8px; }
+          .summary-item label { font-size: 12px; color: #666; display: block; }
+          .summary-item value { font-size: 20px; font-weight: bold; color: #333; }
+          .cost-box { background: #e6f3ff; padding: 20px; border-radius: 8px; text-align: center; }
+          .cost-box .label { font-size: 14px; color: #666; }
+          .cost-box .amount { font-size: 28px; font-weight: bold; color: #0066cc; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background: #0066cc; color: white; }
+          tr:nth-child(even) { background: #f9f9f9; }
+          .footer { margin-top: 30px; text-align: center; color: #999; font-size: 12px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>📶 LAPORAN TAGIHAN INTERNET</h1>
+          <p>Periode: ${monthYear}</p>
+          <p>Tanggal Export: ${reportDate}</p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">RINGKASAN PEMAKAIAN</div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <label>Total Pemakaian Bulan Ini</label>
+              <value>${totalUsageThisMonth.toFixed(2)} GB</value>
+            </div>
+            <div class="summary-item">
+              <label>Rata-rata Harian</label>
+              <value>${averageDaily.toFixed(2)} GB/hari</value>
+            </div>
+            <div class="summary-item">
+              <label>Harga per GB</label>
+              <value>Rp ${pricePerGB.toLocaleString('id-ID')}</value>
+            </div>
+            <div class="summary-item">
+              <label>Proyeksi Akhir Bulan</label>
+              <value>${(averageDaily * 30).toFixed(1)} GB</value>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">ESTIMASI BIAYA</div>
+          <div class="cost-box">
+            <div class="label">Total Tagihan Bulan Ini</div>
+            <div class="amount">Rp ${estimatedCost.toLocaleString('id-ID')}</div>
+          </div>
+          <div style="margin-top: 15px; padding: 15px; background: #fff8e6; border-radius: 8px;">
+            <strong>Proyeksi Akhir Bulan:</strong> Rp ${(averageDaily * 30 * pricePerGB).toLocaleString('id-ID')}
+            <br><small style="color: #666;">*Berdasarkan rata-rata pemakaian harian</small>
+          </div>
+        </div>
+
+        ${usageData.length > 0 ? `
+        <div class="section">
+          <div class="section-title">DETAIL PEMAKAIAN HARIAN</div>
+          <table>
+            <thead>
+              <tr><th>Tanggal</th><th>Pemakaian (GB)</th></tr>
+            </thead>
+            <tbody>
+              ${usageData.map(item => `<tr><td>${item.date}</td><td>${item.usage.toFixed(2)} GB</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>Dokumen ini digenerate secara otomatis oleh KendaliNet</p>
+          <p>© ${currentDate.getFullYear()} - RT/RW Net Management System</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    toast({
+      title: "Export PDF",
+      description: "Dialog cetak PDF telah dibuka",
+    });
+  };
+
   return (
     <div className="space-y-4 pb-24">
       {/* Header */}
@@ -80,10 +238,32 @@ export default function BillingReport({ usedGB, totalGB }: BillingReportProps) {
             Laporan Tagihan
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Pantau pemakaian data dan estimasi biaya internet Anda
           </p>
+          
+          {/* Export Buttons */}
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportToPDF}
+              className="flex-1"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportToCSV}
+              className="flex-1"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
