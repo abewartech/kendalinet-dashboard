@@ -1,11 +1,28 @@
 import { Wifi, WifiOff, Clock, Activity } from "lucide-react";
+import { RouterProfile } from "@/lib/routerTypes";
+import RouterSelector from "./RouterSelector";
 
 interface StatusHeaderProps {
   isOnline: boolean;
   uptime: string;
+  routers?: RouterProfile[];
+  activeRouter?: RouterProfile;
+  onSwitchRouter?: (id: string) => void;
+  onManageRouters?: () => void;
+  onShowDashboard?: () => void;
 }
 
-const StatusHeader = ({ isOnline, uptime }: StatusHeaderProps) => {
+const StatusHeader = ({ 
+  isOnline, 
+  uptime,
+  routers = [],
+  activeRouter,
+  onSwitchRouter,
+  onManageRouters,
+  onShowDashboard
+}: StatusHeaderProps) => {
+  const hasMultiRouter = routers.length > 0 && onSwitchRouter && onManageRouters && onShowDashboard;
+
   return (
     <header className="px-4 pt-6 pb-4">
       <div className="flex items-center justify-between">
@@ -13,7 +30,16 @@ const StatusHeader = ({ isOnline, uptime }: StatusHeaderProps) => {
           <h1 className="text-2xl font-bold gradient-text">KendaliNet</h1>
           <p className="text-sm text-muted-foreground mt-1">PantauWrt Dashboard</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {hasMultiRouter && (
+            <RouterSelector
+              routers={routers}
+              activeRouter={activeRouter}
+              onSwitchRouter={onSwitchRouter}
+              onManageRouters={onManageRouters}
+              onShowDashboard={onShowDashboard}
+            />
+          )}
           <div
             className={`flex items-center gap-2 px-3 py-2 rounded-full glass-card ${
               isOnline ? "border-success/30" : "border-destructive/30"
