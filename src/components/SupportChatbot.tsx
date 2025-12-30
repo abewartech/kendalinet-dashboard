@@ -22,13 +22,13 @@ const FAQ_RESPONSES: Record<string, string> = {
 
 const getResponse = (message: string): string => {
   const lowerMessage = message.toLowerCase();
-  
+
   for (const [keyword, response] of Object.entries(FAQ_RESPONSES)) {
     if (lowerMessage.includes(keyword)) {
       return response;
     }
   }
-  
+
   return "Terima kasih atas pertanyaan Anda. Untuk bantuan lebih lanjut, silakan hubungi customer service kami di 0800-123-4567 atau email support@wifimanager.id";
 };
 
@@ -77,11 +77,10 @@ const SupportChatbot = () => {
       {/* Floating Chat Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-          isOpen ? "hidden" : ""
-        }`}
+        className={`fixed bottom-20 right-4 z-50 w-11 h-11 rounded-full bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 ${isOpen ? "hidden" : ""
+          }`}
       >
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="w-5 h-5" />
       </button>
 
       {/* Chat Window */}
@@ -115,11 +114,10 @@ const SupportChatbot = () => {
                   className={`flex ${msg.isBot ? "justify-start" : "justify-end"}`}
                 >
                   <div
-                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-line ${
-                      msg.isBot
+                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-line ${msg.isBot
                         ? "bg-secondary text-foreground rounded-tl-sm"
                         : "bg-primary text-primary-foreground rounded-tr-sm"
-                    }`}
+                      }`}
                   >
                     {msg.text}
                   </div>

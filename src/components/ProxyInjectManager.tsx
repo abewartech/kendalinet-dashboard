@@ -59,7 +59,7 @@ const ProxyInjectManager = () => {
   ];
 
   const handleToggleActive = (id: string) => {
-    setConfigs(prev => prev.map(c => 
+    setConfigs(prev => prev.map(c =>
       c.id === id ? { ...c, isActive: !c.isActive } : c
     ));
     toast.success('Status inject diubah');
@@ -207,56 +207,56 @@ const ProxyInjectManager = () => {
           )}
 
           {/* Config List */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {configs.map((config) => (
               <div
                 key={config.id}
-                className="p-3 rounded-lg bg-background/30 border border-border/30"
+                className="p-4 rounded-2xl bg-secondary/10 border border-border/30 hover:bg-secondary/20 transition-all group"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={config.isActive}
-                      onCheckedChange={() => handleToggleActive(config.id)}
-                    />
-                    <span className="font-medium text-sm">{config.name}</span>
-                    <Badge className={`text-xs ${getTypeColor(config.type)}`}>
-                      {config.type.toUpperCase()}
-                    </Badge>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-center p-1.5 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Switch
+                        checked={config.isActive}
+                        onCheckedChange={() => handleToggleActive(config.id)}
+                        className="scale-90"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">{config.name}</div>
+                      <Badge className={`text-[10px] px-1.5 py-0 h-4 mt-0.5 ${getTypeColor(config.type)} font-bold`}>
+                        {config.type.toUpperCase()}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
                     {config.payload && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7"
+                        className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                         onClick={() => handleCopyPayload(config.id, config.payload)}
                       >
                         {copiedId === config.id ? (
-                          <Check className="w-3 h-3 text-green-500" />
+                          <Check className="w-3.5 h-3.5 text-green-500" />
                         ) : (
-                          <Copy className="w-3 h-3" />
+                          <Copy className="w-3.5 h-3.5" />
                         )}
                       </Button>
                     )}
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-7 w-7"
+                      className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                       onClick={() => handleDeleteConfig(config.id)}
                     >
-                      <Trash2 className="w-3 h-3 text-destructive" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-[10px] text-muted-foreground opacity-60 ml-2">
                   {config.host}:{config.port}
                 </div>
-                {config.payload && (
-                  <div className="mt-2 p-2 rounded bg-background/50 font-mono text-xs text-muted-foreground truncate">
-                    {config.payload.substring(0, 60)}...
-                  </div>
-                )}
               </div>
             ))}
           </div>

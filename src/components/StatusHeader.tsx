@@ -25,17 +25,17 @@ const StatusHeader = ({
 
   return (
     <header className="px-4 pt-6 pb-2 sm:pb-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center justify-between sm:block">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold gradient-text leading-tight">KendaliNet</h1>
-            <p className="text-[10px] sm:text-sm text-muted-foreground">PantauWrt Dashboard</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center justify-between sm:block min-w-0">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold gradient-text leading-tight truncate">KendaliNet</h1>
+            <p className="text-[10px] sm:text-xs text-muted-foreground opacity-80">PantauWrt Dashboard</p>
           </div>
 
-          {/* Mobile status badge only shown when title is next to it */}
-          <div className="flex sm:hidden items-center gap-2">
+          {/* Mobile status badge */}
+          <div className="flex sm:hidden items-center gap-2 shrink-0">
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full glass-card border ${isOnline ? "border-success/30 shadow-[0_0_10px_rgba(34,197,94,0.1)]" : "border-destructive/30"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card border ${isOnline ? "border-success/30 shadow-[0_0_12px_rgba(34,197,94,0.15)]" : "border-destructive/30"
                 }`}
             >
               <div className="relative">
@@ -53,7 +53,7 @@ const StatusHeader = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar shrink-0">
           {hasMultiRouter && (
             <RouterSelector
               routers={routers}
@@ -87,14 +87,14 @@ const StatusHeader = ({
       </div>
 
       {isOnline && (
-        <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4" />
+        <div className="flex items-center gap-4 mt-5 text-[11px] sm:text-sm text-muted-foreground/80">
+          <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-1 rounded-lg">
+            <Clock className="w-3.5 h-3.5" />
             <span>Aktif {uptime}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-success" />
-            <span>Stabil</span>
+          <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-1 rounded-lg">
+            <Activity className="w-3.5 h-3.5 text-success" />
+            <span className="text-success/90 font-medium">Stabil</span>
           </div>
         </div>
       )}

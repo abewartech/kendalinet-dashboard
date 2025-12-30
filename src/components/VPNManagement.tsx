@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Plus, Trash2, Play, Square, Settings, Globe } from 'lucide-react';
+import { Shield, Plus, Trash2, Play, Square, Settings, Globe, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VPNProfile {
@@ -55,7 +55,7 @@ const VPNManagement = () => {
         const newStatus = p.status === 'connected' ? 'disconnected' : 'connecting';
         if (newStatus === 'connecting') {
           setTimeout(() => {
-            setProfiles(current => current.map(cp => 
+            setProfiles(current => current.map(cp =>
               cp.id === id ? { ...cp, status: 'connected', isActive: true } : { ...cp, status: 'disconnected', isActive: false }
             ));
             toast.success(`Terhubung ke ${p.name}`);
@@ -65,7 +65,7 @@ const VPNManagement = () => {
       }
       return { ...p, status: 'disconnected', isActive: false };
     }));
-    
+
     if (profiles.find(p => p.id === id)?.status === 'connected') {
       toast.info('VPN diputus');
     }
@@ -201,46 +201,51 @@ const VPNManagement = () => {
           )}
 
           {/* Profile List */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {profiles.map((profile) => (
               <div
                 key={profile.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-background/30 border border-border/30"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-secondary/20 border border-border/30 hover:bg-secondary/30 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${getStatusColor(profile.status)}`} />
-                  <div>
-                    <div className="font-medium text-sm">{profile.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {profile.server}:{profile.port}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusColor(profile.status)} shadow-[0_0_8px_rgba(34,197,94,0.4)]`} />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm truncate">{profile.name}</div>
+                    <div className="text-[10px] text-muted-foreground truncate opacity-70">
+                      {profile.server}
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 shrink-0">
                     {getTypeLabel(profile.type)}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0 ml-2">
                   <Button
-                    size="sm"
-                    variant={profile.status === 'connected' ? 'destructive' : 'default'}
+                    size="icon"
+                    className={`h-9 w-9 rounded-full shadow-lg transition-transform active:scale-90 ${profile.status === 'connected'
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : profile.status === 'connecting'
+                        ? 'bg-yellow-500'
+                        : 'bg-cyan-500 hover:bg-cyan-600'
+                      }`}
                     onClick={() => handleConnect(profile.id)}
                     disabled={profile.status === 'connecting'}
                   >
                     {profile.status === 'connected' ? (
-                      <><Square className="w-3 h-3 mr-1" /> Putus</>
+                      <Square className="w-4 h-4 fill-white" />
                     ) : profile.status === 'connecting' ? (
-                      'Menghubungkan...'
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
                     ) : (
-                      <><Play className="w-3 h-3 mr-1" /> Hubungkan</>
+                      <Play className="w-4 h-4 fill-white ml-0.5" />
                     )}
                   </Button>
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => handleDeleteProfile(profile.id)}
                   >
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
