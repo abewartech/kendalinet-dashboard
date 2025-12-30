@@ -186,6 +186,44 @@
 
 ---
 
+## 🔌 17. Port Forwarding ✨ *BARU*
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| **Kelola Port Rules** | Tambah, edit, hapus aturan port forwarding |
+| **Protokol Fleksibel** | Mendukung TCP, UDP, atau TCP+UDP |
+| **Port Mapping** | Atur external port ke internal IP:port |
+| **Preset Templates** | Template siap pakai (HTTP, SSH, Minecraft, dll) |
+| **Toggle Status** | Aktifkan/nonaktifkan rule dengan satu klik |
+| **Statistik Rules** | Ringkasan jumlah rule aktif dan nonaktif |
+
+---
+
+## 🛡️ 18. Firewall Rules ✨ *BARU*
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| **Kelola Firewall** | Tambah, edit, hapus aturan firewall |
+| **Action Types** | Accept, Drop, atau Reject traffic |
+| **Protokol Support** | TCP, UDP, ICMP, atau All protocols |
+| **Traffic Direction** | Input, Output, atau Forward rules |
+| **IP/Port Filtering** | Filter berdasarkan source/dest IP dan port |
+| **Preset Templates** | Template keamanan (Block All, Allow HTTPS, dll) |
+| **Toggle Status** | Aktifkan/nonaktifkan rule dengan satu klik |
+
+---
+
+## 🎛️ 19. Kontrol Lanjutan (Advanced Control) ✨ *BARU*
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| **VPN Management** | Kelola profil OpenVPN, WireGuard, L2TP, PPTP |
+| **Proxy Inject** | Konfigurasi HTTP/SSL/WebSocket proxy dengan payload |
+| **Adblock DNS** | Blokir iklan & tracker di level DNS (AdGuard-style) |
+| **App Blocker** | Blokir aplikasi (Facebook, TikTok, YouTube) dengan jadwal |
+
+---
+
 ## 🎨 Desain & UI
 
 | Aspek | Detail |
