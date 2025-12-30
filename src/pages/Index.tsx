@@ -29,6 +29,7 @@ import ProxyInjectManager from "@/components/ProxyInjectManager";
 import AdblockManager from "@/components/AdblockManager";
 import AppBlocker from "@/components/AppBlocker";
 import PortForwarding from "@/components/PortForwarding";
+import FirewallRules from "@/components/FirewallRules";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -497,6 +498,12 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "portfwd" && (
         <div className="px-4">
           <PortForwarding />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "firewall" && (
+        <div className="px-4">
+          <FirewallRules />
         </div>
       )}
 
