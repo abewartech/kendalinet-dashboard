@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -13,6 +13,7 @@ const navItems = [
   { id: "monitor", label: "Monitor", icon: Activity },
   { id: "traffic", label: "Traffic", icon: BarChart3 },
   { id: "kontrol", label: "Kontrol", icon: Sliders },
+  { id: "portfwd", label: "Port Fwd", icon: ArrowRightLeft },
   { id: "keamanan", label: "Keamanan", icon: Shield },
   { id: "jadwal", label: "Jadwal", icon: Clock },
   { id: "bandwidth", label: "Bandwidth", icon: Gauge },
