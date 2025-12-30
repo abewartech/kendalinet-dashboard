@@ -32,6 +32,11 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     const [devices, setDevices] = useState<any[]>([]);
     const [wifi, setWifi] = useState<any>(null);
     const [system, setSystem] = useState<any>(null);
+    const [dnsInfo, setDnsInfo] = useState<any>(null);
+    const [firewallInfo, setFirewallInfo] = useState<any>(null);
+    const [vouchersInfo, setVouchersInfo] = useState<any>(null);
+    const [securityInfo, setSecurityInfo] = useState<any>(null);
+    const [scheduleInfo, setScheduleInfo] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -59,148 +64,165 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                         uptime: systemInfo.uptime || 0
                     };
                 } catch (ubusErr: any) {
-                    console.warn('UBUS API failed, trying LuCI controller fallback:', ubusErr.message);
-                    const res = await fetch(`${API_BASE}/status`);
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Fallback status failed`);
+                    console.warn('UBUS API failed, trying fallback:', ubusErr.message);
+                    const res = await fetch(`${CGI_BASE}/status.sh`);
                     data = await res.json();
                 }
-            } else if (method === 'cgi') {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}: status.sh failed`);
-                data = await res.json();
             } else {
                 const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}: API status failed`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: status.sh failed`);
                 data = await res.json();
             }
 
             setStatus(data);
         } catch (err: any) {
-            const errorMessage = `[Status] Fail: ${err.message} | Path: ${url}`;
-            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
-            console.error(errorMessage);
+            console.error(`[Status] Fail: ${err.message}`);
         }
     };
 
     const fetchDevices = async () => {
-        const url = method === 'cgi' || method === 'ubus' ? `${CGI_BASE}/devices.sh` : `${API_BASE}/devices`;
+        const url = `${CGI_BASE}/devices.sh`;
         try {
-            setError(null);
-            let data: any[];
-
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch devices`);
-            data = await res.json();
-
+            const data = await res.json();
             setDevices(data || []);
         } catch (err: any) {
-            const errorMessage = `[Devices] Fail: ${err.message} | Path: ${url}`;
-            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
-            console.error(errorMessage);
+            console.error(`[Devices] Fail: ${err.message}`);
             setDevices([]);
         }
     };
 
     const fetchWifi = async () => {
-        const url = method === 'cgi' ? `${CGI_BASE}/wifi.sh` : `${API_BASE}/wifi`;
+        const url = `${CGI_BASE}/wifi.sh`;
         try {
-            setError(null);
-            let data: any;
-
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch wifi`);
-            data = await res.json();
-
+            const data = await res.json();
             setWifi(data);
         } catch (err: any) {
-            const errorMessage = `[WiFi] Fail: ${err.message} | Path: ${url}`;
-            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
-            console.error(errorMessage);
+            console.error(`[WiFi] Fail: ${err.message}`);
         }
     };
 
     const fetchSystem = async () => {
-        const url = method === 'cgi' ? `${CGI_BASE}/system.sh` : `${API_BASE}/system`;
+        const url = `${CGI_BASE}/system.sh`;
         try {
-            setError(null);
-            let data: any;
-
-            if (method === 'ubus') {
-                try {
-                    // Use ubus API for system info
-                    const [systemInfo, boardInfo] = await Promise.all([
-                        getSystemInfo(),
-                        getBoardInfo().catch(() => ({}))
-                    ]);
-
-                    const memory = systemInfo.memory || { total: 0, available: 0, free: 0 };
-                    const total_mem = memory.total;
-                    const available_mem = memory.available || memory.free;
-                    const used_mem = total_mem - available_mem;
-                    const mem_percent = total_mem > 0 ? Math.floor((used_mem / total_mem) * 100) : 0;
-
-                    data = {
-                        model: boardInfo.model || 'OpenWrt Device',
-                        firmware: boardInfo.release?.description || 'OpenWrt',
-                        cpu_load: systemInfo.load?.[0] ? (systemInfo.load[0] / 65536).toFixed(2) : '0.00',
-                        memory_percent: mem_percent,
-                        uptime: systemInfo.uptime || 0,
-                        hostname: boardInfo.hostname || 'OpenWrt'
-                    };
-                } catch (ubusErr: any) {
-                    // If ubus fails, try fallback to LuCI controller
-                    console.warn('UBUS API failed, trying LuCI controller fallback:', ubusErr.message);
-                    const res = await fetch(`${API_BASE}/system`);
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Fallback system failed`);
-                    data = await res.json();
-                }
-            } else if (method === 'cgi') {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}: system.sh failed`);
-                data = await res.json();
-            } else {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}: API system failed`);
-                data = await res.json();
-            }
-
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch system`);
+            const data = await res.json();
             setSystem(data);
         } catch (err: any) {
-            const errorMessage = `[System] Fail: ${err.message} | Path: ${url}`;
-            setError(prev => prev ? `${prev}\n${errorMessage}` : errorMessage);
-            console.error(errorMessage);
+            console.error(`[System] Fail: ${err.message}`);
+        }
+    };
+
+    const fetchDns = async () => {
+        const url = `${CGI_BASE}/dns.sh`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch DNS`);
+            const data = await res.json();
+            setDnsInfo(data);
+        } catch (err: any) {
+            console.error(`[DNS] Fail: ${err.message}`);
+        }
+    };
+
+    const fetchFirewall = async () => {
+        const url = `${CGI_BASE}/firewall.sh`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch Firewall`);
+            const data = await res.json();
+            setFirewallInfo(data);
+        } catch (err: any) {
+            console.error(`[Firewall] Fail: ${err.message}`);
+        }
+    };
+
+    const fetchVouchers = async () => {
+        const url = `${CGI_BASE}/vouchers.sh`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch Vouchers`);
+            const data = await res.json();
+            setVouchersInfo(data);
+        } catch (err: any) {
+            console.error(`[Vouchers] Fail: ${err.message}`);
+        }
+    };
+
+    const fetchSecurity = async () => {
+        const url = `${CGI_BASE}/security.sh`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch Security`);
+            const data = await res.json();
+            setSecurityInfo(data);
+        } catch (err: any) {
+            console.error(`[Security] Fail: ${err.message}`);
+        }
+    };
+
+    const fetchSchedule = async () => {
+        const url = `${CGI_BASE}/schedule.sh`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch Schedule`);
+            const data = await res.json();
+            setScheduleInfo(data);
+        } catch (err: any) {
+            console.error(`[Schedule] Fail: ${err.message}`);
         }
     };
 
     const saveWifi = async (ssid: string, hidden: boolean, password?: string) => {
         try {
-            if (method === 'cgi') {
-                // CGI method - send as JSON
-                const res = await fetch(`${CGI_BASE}/wifi_save.sh`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ssid, hidden, password }),
-                });
-                if (!res.ok) throw new Error('Failed to save wifi');
-                return await res.json();
-            } else {
-                // Legacy LuCI controller method
-                const formData = new FormData();
-                formData.append('ssid', ssid);
-                formData.append('hidden', hidden ? 'true' : 'false');
-                if (password) {
-                    formData.append('password', password);
-                }
-
-                const res = await fetch(`${API_BASE}/wifi_save`, {
-                    method: 'POST',
-                    body: formData,
-                });
-                if (!res.ok) throw new Error('Failed to save wifi');
-                return await res.json();
-            }
+            const res = await fetch(`${CGI_BASE}/wifi_save.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ssid, hidden, password }),
+            });
+            return await res.json();
         } catch (err: any) {
-            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
+    const saveDns = async (provider: string, dns1?: string, dns2?: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/dns_save.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider, dns1, dns2 }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const applyBandwidthLimit = async (mac: string, rate: number) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/bandwidth_limit.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mac, rate }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const optimizeNetwork = async (action: 'clear_cache' | 'wifi_optimize' | 'reboot') => {
+        try {
+            const res = await fetch(`${CGI_BASE}/optimize.sh?action=${action}`, {
+                method: 'GET',
+            });
+            return await res.json();
+        } catch (err: any) {
             return { success: false, error: err.message };
         }
     };
@@ -210,7 +232,17 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
 
         setLoading(true);
         const loadData = async () => {
-            await Promise.all([fetchStatus(), fetchDevices(), fetchWifi(), fetchSystem()]);
+            await Promise.all([
+                fetchStatus(),
+                fetchDevices(),
+                fetchWifi(),
+                fetchSystem(),
+                fetchDns(),
+                fetchFirewall(),
+                fetchVouchers(),
+                fetchSecurity(),
+                fetchSchedule()
+            ]);
             setLoading(false);
         };
 
@@ -225,5 +257,25 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         return () => clearInterval(interval);
     }, [enabled, method]);
 
-    return { status, devices, wifi, system, loading, error, fetchStatus, fetchDevices, fetchWifi, fetchSystem, saveWifi };
+    return {
+        status,
+        devices,
+        wifi,
+        system,
+        dnsInfo,
+        firewallInfo,
+        vouchersInfo,
+        securityInfo,
+        scheduleInfo,
+        loading,
+        error,
+        fetchStatus,
+        fetchDevices,
+        fetchWifi,
+        fetchSystem,
+        saveWifi,
+        saveDns,
+        applyBandwidthLimit,
+        optimizeNetwork
+    };
 };

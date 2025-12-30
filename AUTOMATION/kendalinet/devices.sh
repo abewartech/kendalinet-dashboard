@@ -41,10 +41,14 @@ if [ -f /tmp/dhcp.leases ]; then
                 fi
             fi
 
-            # Simulate bandwidth
-            bandwidth=$((RANDOM % 100 + 1))
+            # Get Bandwidth Limit
+            limit=$(grep -i "^$mac" /etc/kendalinet/bandwidth_limits.conf 2>/dev/null | cut -d',' -f2)
+            if [ -z "$limit" ]; then limit=0; fi
+
+            # Fake current usage (real usage requires complex tracking like iptmon or traffic-monitor)
+            usage=$((RANDOM % 5))
             
-            devices="$devices{\"mac\":\"$mac\",\"ip\":\"$ip\",\"name\":\"$name\",\"online\":$online,\"bandwidth\":$bandwidth,\"blocked\":$blocked}"
+            devices="$devices{\"mac\":\"$mac\",\"ip\":\"$ip\",\"name\":\"$name\",\"online\":$online,\"usage\":$usage,\"limit\":$limit,\"blocked\":$blocked}"
         fi
     done < /tmp/dhcp.leases
 fi

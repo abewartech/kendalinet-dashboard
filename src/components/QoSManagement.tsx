@@ -9,14 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { 
-  Gauge, 
-  Plus, 
-  Trash2, 
-  Gamepad2, 
-  Video, 
-  Phone, 
-  Globe, 
+import {
+  Gauge,
+  Plus,
+  Trash2,
+  Gamepad2,
+  Video,
+  Phone,
+  Globe,
   Download,
   Smartphone,
   Laptop,
@@ -42,7 +42,7 @@ const QoSManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [uploadBandwidth, setUploadBandwidth] = useState([80]);
   const [downloadBandwidth, setDownloadBandwidth] = useState([100]);
-  
+
   const [rules, setRules] = useState<TrafficRule[]>([
     { id: "1", name: "Gaming Traffic", type: "application", category: "gaming", priority: "highest", enabled: true },
     { id: "2", name: "Video Call", type: "application", category: "voip", priority: "high", enabled: true },
@@ -89,14 +89,14 @@ const QoSManagement = () => {
     setIsEnabled(enabled);
     toast({
       title: enabled ? "QoS Diaktifkan" : "QoS Dinonaktifkan",
-      description: enabled 
-        ? "Prioritas bandwidth sekarang aktif" 
+      description: enabled
+        ? "Prioritas bandwidth sekarang aktif"
         : "Semua traffic diperlakukan sama",
     });
   };
 
   const handleToggleRule = (id: string) => {
-    setRules(rules.map(rule => 
+    setRules(rules.map(rule =>
       rule.id === id ? { ...rule, enabled: !rule.enabled } : rule
     ));
   };
@@ -234,16 +234,16 @@ const QoSManagement = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {presetProfiles.map((preset) => (
                   <Button
                     key={preset.name}
                     variant="outline"
                     size="sm"
-                    className="h-auto py-2 flex-col"
+                    className="h-auto py-2.5 flex-col gap-1 border-primary/10 hover:border-primary/30 hover:bg-primary/5"
                     onClick={() => applyPreset(preset)}
                   >
-                    <span className="text-xs font-medium">{preset.name}</span>
+                    <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap">{preset.name}</span>
                   </Button>
                 ))}
               </div>
@@ -252,16 +252,17 @@ const QoSManagement = () => {
 
           {/* Rules Management */}
           <Card className="bg-card/50 backdrop-blur border-border/50">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 px-4 sm:px-6">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Rules Prioritas</CardTitle>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="gap-1">
-                      <Plus className="h-4 w-4" />
+                    <Button size="sm" className="gap-1 h-8 px-2 sm:px-3">
+                      <Plus className="h-3.5 w-3.5" />
                       Tambah
                     </Button>
                   </DialogTrigger>
+                  {/* ... Dialog components ... */}
                   <DialogContent className="bg-card border-border">
                     <DialogHeader>
                       <DialogTitle>Tambah Rule QoS</DialogTitle>
@@ -280,8 +281,8 @@ const QoSManagement = () => {
                         <Label>Tipe</Label>
                         <Select
                           value={newRule.type}
-                          onValueChange={(value) => setNewRule({ 
-                            ...newRule, 
+                          onValueChange={(value) => setNewRule({
+                            ...newRule,
                             type: value as "application" | "device",
                             category: value === "application" ? "gaming" : "phone"
                           })}
@@ -306,23 +307,23 @@ const QoSManagement = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {newRule.type === "application" 
+                            {newRule.type === "application"
                               ? applicationCategories.map((cat) => (
-                                  <SelectItem key={cat.value} value={cat.value}>
-                                    <div className="flex items-center gap-2">
-                                      <cat.icon className="h-4 w-4" />
-                                      {cat.label}
-                                    </div>
-                                  </SelectItem>
-                                ))
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  <div className="flex items-center gap-2">
+                                    <cat.icon className="h-4 w-4" />
+                                    {cat.label}
+                                  </div>
+                                </SelectItem>
+                              ))
                               : deviceCategories.map((cat) => (
-                                  <SelectItem key={cat.value} value={cat.value}>
-                                    <div className="flex items-center gap-2">
-                                      <cat.icon className="h-4 w-4" />
-                                      {cat.label}
-                                    </div>
-                                  </SelectItem>
-                                ))
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  <div className="flex items-center gap-2">
+                                    <cat.icon className="h-4 w-4" />
+                                    {cat.label}
+                                  </div>
+                                </SelectItem>
+                              ))
                             }
                           </SelectContent>
                         </Select>
@@ -385,37 +386,41 @@ const QoSManagement = () => {
 
               {/* Rules List */}
               {rules.map((rule) => (
-                <Card key={rule.id} className={`bg-muted/20 border-border/30 ${!rule.enabled ? 'opacity-50' : ''}`}>
+                <Card key={rule.id} className={`bg-muted/20 border-border/30 ${!rule.enabled ? 'opacity-50' : ''} overflow-hidden`}>
                   <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted/50 rounded-lg">
+                    <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 bg-muted/50 rounded-lg flex-shrink-0">
                           {getCategoryIcon(rule.category, rule.type)}
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{rule.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm truncate">{rule.name}</p>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground font-medium">
                               {rule.type === "application" ? "Aplikasi" : "Perangkat"}
-                            </Badge>
+                            </span>
                             {rule.bandwidthLimit && (
-                              <Badge variant="secondary" className="text-xs">
-                                Max {rule.bandwidthLimit} Mbps
-                              </Badge>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold">
+                                {rule.bandwidthLimit}Mbps
+                              </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getPriorityBadge(rule.priority)}
-                        <Switch
-                          checked={rule.enabled}
-                          onCheckedChange={() => handleToggleRule(rule.id)}
-                        />
+
+                      <div className="flex items-center justify-between xs:justify-end gap-2 sm:gap-4 pl-10 xs:pl-0">
+                        <div className="flex items-center gap-2">
+                          {getPriorityBadge(rule.priority)}
+                          <Switch
+                            checked={rule.enabled}
+                            onCheckedChange={() => handleToggleRule(rule.id)}
+                            className="scale-90"
+                          />
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleDeleteRule(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -432,9 +437,9 @@ const QoSManagement = () => {
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Tentang QoS:</span> Quality of Service 
-                memungkinkan Anda memprioritaskan traffic tertentu agar mendapat bandwidth lebih 
-                saat jaringan sibuk. Gaming dan video call biasanya butuh prioritas tinggi untuk 
+                <span className="font-medium text-foreground">Tentang QoS:</span> Quality of Service
+                memungkinkan Anda memprioritaskan traffic tertentu agar mendapat bandwidth lebih
+                saat jaringan sibuk. Gaming dan video call biasanya butuh prioritas tinggi untuk
                 menghindari lag.
               </p>
             </CardContent>
