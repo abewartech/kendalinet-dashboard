@@ -33,6 +33,8 @@ import FirewallRules from "@/components/FirewallRules";
 import QoSManagement from "@/components/QoSManagement";
 import UPnPManagement from "@/components/UPnPManagement";
 import SystemManagement from "@/components/SystemManagement";
+import CaptivePortal from "@/components/CaptivePortal";
+import LoadBalancing from "@/components/LoadBalancing";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -543,6 +545,18 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "sistem" && (
         <div className="px-4">
           <SystemManagement />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "captive" && (
+        <div className="px-4">
+          <CaptivePortal />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "loadbalance" && (
+        <div className="px-4">
+          <LoadBalancing />
         </div>
       )}
 
