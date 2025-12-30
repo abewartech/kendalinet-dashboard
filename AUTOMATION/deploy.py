@@ -33,13 +33,19 @@ def main():
         print("❌ No .sh scripts found in LOCAL_SCRIPTS_DIR")
         return
 
-    # 3. Push files using SCP
-    print(f"📤 Pushing {len(files)} scripts...")
-    for file in files:
-        local_path = os.path.join(LOCAL_SCRIPTS_DIR, file)
-        scp_cmd = f"scp \"{local_path}\" {ROUTER_USER}@{ROUTER_IP}:{REMOTE_CGI_DIR}/"
-        if run_command(scp_cmd) is not None:
-            print(f"  ✅ {file} uploaded")
+    # 3. Push files using a single SCP command (faster and fewer password prompts)
+    print(f"📤 Pushing all scripts...")
+    # Use -O for legacy protocol (OpenWrt/Dropbear compatibility)
+    scp_cmd = f"scp -O \"{LOCAL_SCRIPTS_DIR}\\*.sh\" {ROUTER_USER}@{ROUTER_IP}:{REMOTE_CGI_DIR}/"
+    if run_command(scp_cmd) is not None:
+        print(f"  ✅ All scripts uploaded")
+    else:
+        print("⚠️ Wildcard push failed, trying individual files...")
+        for file in files:
+            local_path = os.path.join(LOCAL_SCRIPTS_DIR, file)
+            scp_cmd = f"scp -O \"{local_path}\" {ROUTER_USER}@{ROUTER_IP}:{REMOTE_CGI_DIR}/"
+            if run_command(scp_cmd) is not None:
+                print(f"  ✅ {file} uploaded")
 
     # 4. Set permissions and restart uhttpd
     print("🔑 Setting permissions and restarting web server...")

@@ -30,13 +30,21 @@ function deploy() {
       return;
     }
 
-    // 3. Push files using SCP
-    console.log(`📤 Pushing ${files.length} scripts...`);
-    // Using wildcard if possible, or individual files for better logging
-    for (const file of files) {
-      const localFilePath = path.join(config.localPath, file);
-      execSync(`scp "${localFilePath}" ${config.user}@${config.host}:${config.remotePath}/`, { stdio: 'inherit' });
-      console.log(`  ✅ ${file} uploaded`);
+    // 3. Push all .sh files using a single SCP command to reduce password prompts
+    console.log(`📤 Pushing all .sh scripts...`);
+    try {
+      // Use -O for legacy protocol (Dropbear compatibility)
+      // On Windows, the wildcard expansion might be tricky, so we specify the folder
+      execSync(`scp -O "${config.localPath}\\*.sh" ${config.user}@${config.host}:${config.remotePath}/`, { stdio: 'inherit' });
+      console.log(`  ✅ All scripts uploaded`);
+    } catch (e) {
+      // If wildcard fails, fallback to individual files but warn about passwords
+      console.warn('⚠️ Wildcard push failed, trying individual files...');
+      for (const file of files) {
+        const localFilePath = path.join(config.localPath, file);
+        execSync(`scp -O "${localFilePath}" ${config.user}@${config.host}:${config.remotePath}/`, { stdio: 'inherit' });
+        console.log(`  ✅ ${file} uploaded`);
+      }
     }
 
     // 4. Set permissions and restart service
