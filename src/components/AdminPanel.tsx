@@ -113,6 +113,34 @@ const AdminPanel = ({ systemData }: AdminPanelProps) => {
               </p>
             </div>
           </button>
+
+          <button
+            onClick={async () => {
+              setRestarting(true); // Re-use state for loading visual
+              toast({ title: "🚀 Memulai Deployment", description: "Mengirim script ke router..." });
+              try {
+                const res = await fetch('/api/deploy', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                  toast({ title: "✅ Berhasil", description: "Semua script berhasil dikirim ke router!" });
+                } else {
+                  toast({ title: "❌ Gagal", description: data.error, variant: "destructive" });
+                }
+              } catch (e) {
+                toast({ title: "❌ Error", description: "Gagal menghubungi server development", variant: "destructive" });
+              } finally {
+                setRestarting(false);
+              }
+            }}
+            disabled={restarting}
+            className="w-full flex items-center gap-3 p-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all border border-primary/20"
+          >
+            <Power className="w-5 h-5 text-primary" />
+            <div className="text-left">
+              <p className="font-medium text-foreground">Push Script ke Router</p>
+              <p className="text-xs text-muted-foreground">Otomatis kirim file ke /www/cgi-bin/</p>
+            </div>
+          </button>
         </div>
       </div>
     </div>
