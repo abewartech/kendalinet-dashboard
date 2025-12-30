@@ -31,19 +31,42 @@ export default defineConfig(({ mode }) => ({
       configureServer(server: any) {
         server.middlewares.use((req: any, res: any, next: any) => {
           if (req.url === '/api/deploy' && req.method === 'POST') {
-            console.log('[Deploy] Triggered from dashboard');
+            const { spawn } = require('child_process');
+            const path = require('path');
+
+            console.log('\n[Deploy] 🚀 Triggered from dashboard');
             const scriptPath = path.join(process.cwd(), 'AUTOMATION', 'deploy.js');
 
-            exec(`node "${scriptPath}"`, (error: any, stdout: any, stderr: any) => {
+            const child = spawn('node', [scriptPath]);
+            let output = '';
+            let errorOutput = '';
+
+            child.stdout.on('data', (data: any) => {
+              const str = data.toString();
+              process.stdout.write(`[Deploy-Log] ${str}`);
+              output += str;
+            });
+
+            child.stderr.on('data', (data: any) => {
+              const str = data.toString();
+              process.stderr.write(`[Deploy-Err] ${str}`);
+              errorOutput += str;
+            });
+
+            child.on('close', (code: number) => {
               res.setHeader('Content-Type', 'application/json');
-              if (error) {
-                console.error(`[Deploy] Error: ${error.message}`);
-                res.statusCode = 500;
-                res.end(JSON.stringify({ success: false, error: error.message, details: stderr }));
-              } else {
-                console.log(`[Deploy] Success: ${stdout}`);
+              if (code === 0) {
+                console.log('[Deploy] ✅ Success');
                 res.statusCode = 200;
-                res.end(JSON.stringify({ success: true, message: 'Scripts pushed successfully', output: stdout }));
+                res.end(JSON.stringify({ success: true, message: 'Deployment complete', output }));
+              } else {
+                console.error(`[Deploy] ❌ Failed with code ${code}`);
+                res.statusCode = 500;
+                res.end(JSON.stringify({
+                  success: false,
+                  error: `Exit code ${code}`,
+                  details: errorOutput || 'Unknown error'
+                }));
               }
             });
           } else {

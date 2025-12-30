@@ -18,21 +18,49 @@ const config = {
 
 const conn = new Client();
 
+function runRemote(cmd) {
+  return new Promise((resolve, reject) => {
+    console.log(`📡 Executing: ${cmd}`);
+    conn.exec(cmd, (err, stream) => {
+      if (err) return reject(err);
+      let output = '';
+      stream.on('close', (code) => {
+        if (code === 0) resolve(output);
+        else reject(new Error(`Command failed with code ${code}: ${cmd}`));
+      }).on('data', (data) => {
+        output += data.toString();
+        process.stdout.write(data.toString());
+      }).stderr.on('data', (data) => {
+        process.stderr.write(data.toString());
+      });
+    });
+  });
+}
+
 async function deploy() {
-  console.log(`🚀 Starting SSH2 Deployment (Safe Mode) to ${config.username}@${config.host}...`);
+  console.log(`\n🚀 Starting Deployment to ${config.username}@${config.host}...`);
 
   return new Promise((resolve, reject) => {
-    conn.on('ready', () => {
+    conn.on('ready', async () => {
       console.log('✅ SSH Connection Ready');
+      try {
+        // 1. Ensure remote directory exists
+        await runRemote(`mkdir -p ${config.remotePath}`);
+        console.log('📁 Remote directory ready');
 
-      // 1. Ensure remote directory exists
-      conn.exec(`mkdir -p ${config.remotePath}`, (err, stream) => {
-        if (err) return reject(err);
-        stream.on('close', () => {
-          console.log('📁 Directory ensured');
-          uploadFilesSequentially().then(resolve).catch(reject);
-        });
-      });
+        // 2. Upload files
+        await uploadFilesSequentially();
+
+        // 3. Finalize
+        await finalizePermissions();
+
+        console.log('\n✨ ALL DONE! Deployment successful.');
+        conn.end();
+        resolve();
+      } catch (err) {
+        conn.end();
+        reject(err);
+      }
     }).on('error', (err) => {
       console.error('❌ Connection Error:', err.message);
       reject(err);
@@ -41,7 +69,8 @@ async function deploy() {
       port: config.port,
       username: config.username,
       password: config.password,
-      readyTimeout: 10000
+      readyTimeout: 15000,
+      keepaliveInterval: 10000
     });
   });
 }
@@ -52,8 +81,6 @@ async function uploadFilesSequentially() {
   for (const file of files) {
     await uploadFilePipe(file);
   }
-
-  await finalizePermissions();
 }
 
 function uploadFilePipe(filename) {
@@ -64,7 +91,6 @@ function uploadFilePipe(filename) {
 
     console.log(`📤 Uploading ${filename} (${content.length} bytes)...`);
 
-    // We use cat to write the file to bypass SFTP requirements
     conn.exec(`cat > "${remoteFile}"`, (err, stream) => {
       if (err) return reject(err);
 
@@ -75,12 +101,17 @@ function uploadFilePipe(filename) {
         } else {
           reject(new Error(`Failed to upload ${filename} with code ${code}`));
         }
-      }).on('error', (err) => {
-        reject(err);
+      }).on('data', (data) => {
+        console.log(`[Upload-Out] ${data}`);
+      }).stderr.on('data', (data) => {
+        console.error(`[Upload-Err] ${data}`);
       });
 
-      stream.write(content);
-      stream.end();
+      if (!stream.write(content)) {
+        stream.once('drain', () => stream.end());
+      } else {
+        stream.end();
+      }
     });
   });
 }
@@ -94,17 +125,7 @@ async function finalizePermissions() {
     '/etc/init.d/uhttpd restart'
   ].join(' && ');
 
-  return new Promise((resolve, reject) => {
-    conn.exec(remoteCmd, (err, stream) => {
-      if (err) return reject(err);
-      stream.on('close', (code) => {
-        console.log('✨ Deployment Complete!');
-        conn.end();
-        resolve();
-      }).on('data', (data) => console.log(data.toString()))
-        .stderr.on('data', (data) => console.error(data.toString()));
-    });
-  });
+  return runRemote(remoteCmd);
 }
 
 deploy().catch(err => {
