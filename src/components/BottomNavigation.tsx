@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft, Workflow, Plug, HardDrive, Network, LayoutGrid } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft, Workflow, Plug, HardDrive, Network, LayoutGrid, Fingerprint, Layers } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -29,6 +29,8 @@ const navItems = [
   { id: "qrcode", label: "QR Code", icon: QrCode },
   { id: "captive", label: "Portal", icon: LayoutGrid },
   { id: "loadbalance", label: "Multi-WAN", icon: Network },
+  { id: "macclone", label: "MAC Clone", icon: Fingerprint },
+  { id: "vlan", label: "VLAN", icon: Layers },
   { id: "sistem", label: "Sistem", icon: HardDrive },
   { id: "admin", label: "Admin", icon: Settings },
 ];
