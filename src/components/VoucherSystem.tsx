@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ticket, Copy, Trash2, Plus, Clock, Wifi } from 'lucide-react';
+import { Ticket, Copy, Trash2, Plus, Clock, Wifi, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Voucher {
@@ -61,7 +61,7 @@ export const VoucherSystem = () => {
   const handleCreateVouchers = () => {
     const qty = parseInt(quantity);
     const newVouchers: Voucher[] = [];
-    
+
     for (let i = 0; i < qty; i++) {
       newVouchers.push({
         id: crypto.randomUUID(),
@@ -90,7 +90,7 @@ export const VoucherSystem = () => {
   };
 
   const handleMarkAsUsed = (id: string) => {
-    setVouchers(prev => prev.map(v => 
+    setVouchers(prev => prev.map(v =>
       v.id === id ? { ...v, status: 'used' as const, usedAt: new Date() } : v
     ));
     toast.success('Voucher ditandai terpakai');
@@ -108,8 +108,8 @@ export const VoucherSystem = () => {
               <Ticket className="w-5 h-5 text-primary" />
               Voucher WiFi
             </CardTitle>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={() => setShowCreate(!showCreate)}
               variant={showCreate ? "secondary" : "default"}
             >
@@ -176,9 +176,9 @@ export const VoucherSystem = () => {
                 </div>
                 <div>
                   <Label className="text-xs">Jumlah</Label>
-                  <Input 
-                    type="number" 
-                    value={quantity} 
+                  <Input
+                    type="number"
+                    value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     min="1"
                     max="50"
@@ -205,51 +205,55 @@ export const VoucherSystem = () => {
             ) : (
               <div className="space-y-2">
                 {activeVouchers.map(voucher => (
-                  <div 
+                  <div
                     key={voucher.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/50"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-border/30 bg-secondary/10 hover:bg-secondary/20 transition-all gap-4"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <code className="text-lg font-mono font-bold text-primary">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <code className="text-xl font-mono font-black text-primary tracking-wider truncate">
                           {voucher.code}
                         </code>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6"
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
                           onClick={() => handleCopyCode(voucher.code)}
                         >
-                          <Copy className="w-3 h-3" />
+                          <Copy className="w-3.5 h-3.5" />
                         </Button>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {voucher.duration >= 24 
-                            ? `${Math.floor(voucher.duration / 24)} Hari` 
-                            : `${voucher.duration} Jam`
-                          }
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Wifi className="w-3 h-3" />
-                          {voucher.quota >= 999 ? 'Unlimited' : `${voucher.quota} GB`}
-                        </span>
-                        <span>{voucher.speedLimit} Mbps</span>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md">
+                          <Clock className="w-3.5 h-3.5 text-primary/70" />
+                          <span className="font-medium">{voucher.duration >= 24
+                            ? `${Math.floor(voucher.duration / 24)} H`
+                            : `${voucher.duration} J`
+                          }</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md">
+                          <Wifi className="w-3.5 h-3.5 text-primary/70" />
+                          <span className="font-medium">{voucher.quota >= 999 ? '∞' : `${voucher.quota} GB`}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md">
+                          <Zap className="w-3.5 h-3.5 text-primary/70" />
+                          <span className="font-medium">{voucher.speedLimit} M</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button 
-                        variant="outline" 
+                    <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/10 justify-between sm:justify-end">
+                      <Button
+                        variant="secondary"
                         size="sm"
+                        className="h-9 font-semibold text-xs rounded-full px-4 grow sm:grow-0"
                         onClick={() => handleMarkAsUsed(voucher.id)}
                       >
                         Tandai Terpakai
                       </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive"
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0"
                         onClick={() => handleDeleteVoucher(voucher.id)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -270,7 +274,7 @@ export const VoucherSystem = () => {
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {usedVouchers.map(voucher => (
-                  <div 
+                  <div
                     key={voucher.id}
                     className="flex items-center justify-between p-2 rounded-lg border border-border/30 bg-muted/30 opacity-60"
                   >
