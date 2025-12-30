@@ -31,6 +31,7 @@ import AppBlocker from "@/components/AppBlocker";
 import PortForwarding from "@/components/PortForwarding";
 import FirewallRules from "@/components/FirewallRules";
 import QoSManagement from "@/components/QoSManagement";
+import UPnPManagement from "@/components/UPnPManagement";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -511,6 +512,12 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "qos" && (
         <div className="px-4">
           <QoSManagement />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "upnp" && (
+        <div className="px-4">
+          <UPnPManagement />
         </div>
       )}
 
