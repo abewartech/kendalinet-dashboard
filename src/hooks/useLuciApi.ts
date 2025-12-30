@@ -37,6 +37,7 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     const [vouchersInfo, setVouchersInfo] = useState<any>(null);
     const [securityInfo, setSecurityInfo] = useState<any>(null);
     const [scheduleInfo, setScheduleInfo] = useState<any>(null);
+    const [trafficInfo, setTrafficInfo] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -177,6 +178,18 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         }
     };
 
+    const fetchTraffic = async () => {
+        const url = `${CGI_BASE}/traffic.sh`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch Traffic`);
+            const data = await res.json();
+            setTrafficInfo(data);
+        } catch (err: any) {
+            console.error(`[Traffic] Fail: ${err.message}`);
+        }
+    };
+
     const saveWifi = async (ssid: string, hidden: boolean, password?: string) => {
         try {
             const res = await fetch(`${CGI_BASE}/wifi_save.sh`, {
@@ -241,7 +254,8 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                 fetchFirewall(),
                 fetchVouchers(),
                 fetchSecurity(),
-                fetchSchedule()
+                fetchSchedule(),
+                fetchTraffic()
             ]);
             setLoading(false);
         };
@@ -252,6 +266,7 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
             fetchStatus();
             fetchDevices();
             fetchSystem();
+            fetchTraffic();
         }, 5000);
 
         return () => clearInterval(interval);
@@ -265,14 +280,15 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         dnsInfo,
         firewallInfo,
         vouchersInfo,
-        securityInfo,
         scheduleInfo,
+        trafficInfo,
         loading,
         error,
         fetchStatus,
         fetchDevices,
         fetchWifi,
         fetchSystem,
+        fetchTraffic,
         saveWifi,
         saveDns,
         applyBandwidthLimit,

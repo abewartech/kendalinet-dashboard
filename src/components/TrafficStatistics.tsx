@@ -3,14 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, BarChart, Bar, Legend 
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, Legend
 } from 'recharts';
-import { 
+import {
   TrendingUp, TrendingDown, Activity, Calendar,
   Download, Upload, RefreshCw, Wifi
 } from 'lucide-react';
+
+import { useLuciApi } from '@/hooks/useLuciApi';
 
 interface DailyData {
   date: string;
@@ -29,15 +31,15 @@ const generateDailyData = (): DailyData[] => {
   const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   const data: DailyData[] = [];
   const today = new Date();
-  
+
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     data.push({
       date: date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
       day: days[date.getDay()],
-      download: Math.random() * 15 + 5,
-      upload: Math.random() * 5 + 1,
+      download: Math.random() * 5 + 2, // Scaled down mock
+      upload: Math.random() * 2 + 0.5,
     });
   }
   return data;
@@ -47,54 +49,55 @@ const generateHourlyData = (): HourlyData[] => {
   const data: HourlyData[] = [];
   for (let i = 0; i < 24; i++) {
     const hour = i.toString().padStart(2, '0') + ':00';
-    const isPeakHour = (i >= 19 && i <= 23) || (i >= 7 && i <= 9);
     data.push({
       hour,
-      download: isPeakHour ? Math.random() * 800 + 400 : Math.random() * 300 + 50,
-      upload: isPeakHour ? Math.random() * 200 + 100 : Math.random() * 100 + 20,
+      download: Math.random() * 100 + 10,
+      upload: Math.random() * 50 + 5,
     });
   }
   return data;
 };
 
-const formatBytes = (gb: number): string => {
-  if (gb >= 1) return `${gb.toFixed(2)} GB`;
-  return `${(gb * 1024).toFixed(0)} MB`;
+const formatBytes = (value: number): string => {
+  if (value >= 1024) return `${(value / 1024).toFixed(2)} TB`;
+  if (value >= 1) return `${value.toFixed(2)} GB`;
+  return `${(value * 1024).toFixed(0)} MB`;
 };
 
 const TrafficStatistics = () => {
+  const { trafficInfo, status, fetchTraffic, loading: apiLoading } = useLuciApi();
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('weekly');
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = () => {
-    setIsLoading(true);
-    setTimeout(() => {
+    if (trafficInfo && trafficInfo.source === 'vnstat') {
+      // Map vnstat data here - for now using enhanced mock if vnstat is missing
+      // In a real scenario, we'll parse trafficInfo.hourly and trafficInfo.daily
       setDailyData(generateDailyData());
       setHourlyData(generateHourlyData());
-      setIsLoading(false);
-    }, 500);
-  };
+    } else {
+      setDailyData(generateDailyData());
+      setHourlyData(generateHourlyData());
+    }
+  }, [trafficInfo]);
 
-  const totalDownload = dailyData.reduce((sum, d) => sum + d.download, 0);
-  const totalUpload = dailyData.reduce((sum, d) => sum + d.upload, 0);
+  // Use real current session data from status.sh if available
+  const totalDownload = status?.rx_mb ? status.rx_mb / 1024 : dailyData.reduce((sum, d) => sum + d.download, 0);
+  const totalUpload = status?.tx_mb ? status.tx_mb / 1024 : dailyData.reduce((sum, d) => sum + d.upload, 0);
+
   const avgDownload = dailyData.length ? totalDownload / dailyData.length : 0;
   const avgUpload = dailyData.length ? totalUpload / dailyData.length : 0;
 
-  const peakHour = hourlyData.reduce((max, h) => 
-    (h.download + h.upload) > (max.download + max.upload) ? h : max, 
+  const peakHour = hourlyData.reduce((max, h) =>
+    (h.download + h.upload) > (max.download + max.upload) ? h : max,
     { hour: '00:00', download: 0, upload: 0 }
   );
 
   const todayDownload = dailyData[dailyData.length - 1]?.download || 0;
   const yesterdayDownload = dailyData[dailyData.length - 2]?.download || 0;
   const trend = todayDownload > yesterdayDownload ? 'up' : 'down';
-  const trendPercent = yesterdayDownload ? 
+  const trendPercent = yesterdayDownload ?
     Math.abs(((todayDownload - yesterdayDownload) / yesterdayDownload) * 100).toFixed(1) : 0;
 
   return (
@@ -166,13 +169,13 @@ const TrafficStatistics = () => {
               <Wifi className="h-4 w-4 text-primary" />
               Statistik Traffic
             </CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={loadData}
-              disabled={isLoading}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fetchTraffic()}
+              disabled={apiLoading}
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${apiLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </CardHeader>
@@ -195,21 +198,21 @@ const TrafficStatistics = () => {
                   <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="downloadGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="uploadGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis 
-                      dataKey="day" 
+                    <XAxis
+                      dataKey="day"
                       tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                       tickFormatter={(v) => `${v.toFixed(0)}G`}
@@ -227,7 +230,7 @@ const TrafficStatistics = () => {
                       ]}
                       labelFormatter={(label) => `Hari: ${label}`}
                     />
-                    <Legend 
+                    <Legend
                       formatter={(value) => value === 'download' ? 'Download' : 'Upload'}
                       wrapperStyle={{ fontSize: '12px' }}
                     />
@@ -255,13 +258,13 @@ const TrafficStatistics = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hourlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis 
-                      dataKey="hour" 
+                    <XAxis
+                      dataKey="hour"
                       tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                       interval={3}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                       tickFormatter={(v) => `${v}MB`}
@@ -279,7 +282,7 @@ const TrafficStatistics = () => {
                       ]}
                       labelFormatter={(label) => `Jam: ${label}`}
                     />
-                    <Legend 
+                    <Legend
                       formatter={(value) => value === 'download' ? 'Download' : 'Upload'}
                       wrapperStyle={{ fontSize: '12px' }}
                     />
@@ -300,7 +303,7 @@ const TrafficStatistics = () => {
         </CardHeader>
         <CardContent className="space-y-2">
           {dailyData.map((day, index) => (
-            <div 
+            <div
               key={index}
               className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
             >
