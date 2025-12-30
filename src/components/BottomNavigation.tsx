@@ -14,6 +14,7 @@ const navItems = [
   { id: "traffic", label: "Traffic", icon: BarChart3 },
   { id: "kontrol", label: "Kontrol", icon: Sliders },
   { id: "portfwd", label: "Port Fwd", icon: ArrowRightLeft },
+  { id: "firewall", label: "Firewall", icon: Shield },
   { id: "keamanan", label: "Keamanan", icon: Shield },
   { id: "jadwal", label: "Jadwal", icon: Clock },
   { id: "bandwidth", label: "Bandwidth", icon: Gauge },
