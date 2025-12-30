@@ -218,7 +218,7 @@ const Index = () => {
   const connectedDevicesCount = devices.filter((d) => d.connected).length;
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-28 sm:pb-32 bg-background/50">
       <StatusHeader
         isOnline={status?.online ?? false}
         uptime={status?.uptime ? `${Math.floor(status.uptime / 3600)}j ${Math.floor((status.uptime % 3600) / 60)}m` : "---"}
@@ -291,13 +291,16 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "beranda" && (
         <div className="px-4 space-y-6">
           {/* Speed Section */}
-          <div className="glass-card-elevated p-6 slide-up">
-            <h2 className="text-lg font-semibold text-foreground mb-6 text-center">
+          <div className="glass-card-elevated p-4 sm:p-6 slide-up">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6 text-center">
               Kecepatan Internet
             </h2>
-            <div className="flex justify-around items-center mb-4">
+            <div className="flex justify-around items-end gap-2 mb-4">
               <div className="flex flex-col items-center">
-                <ArrowDownCircle className="w-5 h-5 text-success mb-2" />
+                <div className="flex items-center gap-1 mb-2">
+                  <ArrowDownCircle className="w-3.5 h-3.5 text-success" />
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-muted-foreground">Download</span>
+                </div>
                 <SpeedometerGauge
                   value={downloadSpeed}
                   maxValue={100}
@@ -306,7 +309,10 @@ const Index = () => {
                 />
               </div>
               <div className="flex flex-col items-center">
-                <ArrowUpCircle className="w-5 h-5 text-primary mb-2" />
+                <div className="flex items-center gap-1 mb-2">
+                  <ArrowUpCircle className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-muted-foreground">Upload</span>
+                </div>
                 <SpeedometerGauge
                   value={uploadSpeed}
                   maxValue={50}
@@ -344,14 +350,14 @@ const Index = () => {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3" style={{ animationDelay: "0.3s" }}>
-            <div className="glass-card p-4 slide-up">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-success" />
+            <div className="glass-card p-3 sm:p-4 slide-up">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Terhubung</p>
-                  <p className="text-xl font-bold text-foreground">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Terhubung</p>
+                  <p className="text-lg sm:text-xl font-bold text-foreground truncate">
                     {connectedDevicesCount}
                   </p>
                 </div>
@@ -359,15 +365,15 @@ const Index = () => {
             </div>
             <button
               onClick={() => setActiveTab("keamanan")}
-              className="glass-card p-4 slide-up flex items-center gap-3 hover:bg-secondary/50 transition-colors"
+              className="glass-card p-3 sm:p-4 slide-up flex items-center gap-2 sm:gap-3 hover:bg-secondary/50 transition-colors"
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${whitelistMode ? "bg-success/10" : "bg-warning/10"
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ${whitelistMode ? "bg-success/10" : "bg-warning/10"
                 }`}>
-                <Shield className={`w-5 h-5 ${whitelistMode ? "text-success" : "text-warning"}`} />
+                <Shield className={`w-4 h-4 sm:w-5 sm:h-5 ${whitelistMode ? "text-success" : "text-warning"}`} />
               </div>
-              <div className="text-left">
-                <p className="text-xs text-muted-foreground">Anti-Maling</p>
-                <p className="text-sm font-bold text-foreground">
+              <div className="text-left min-w-0">
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Anti-Maling</p>
+                <p className="text-sm sm:text-base font-bold text-foreground truncate">
                   {whitelistMode ? "Aktif" : "Nonaktif"}
                 </p>
               </div>

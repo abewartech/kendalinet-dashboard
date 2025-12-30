@@ -22,7 +22,7 @@ const SpeedometerGauge = ({ value, maxValue, label, unit }: SpeedometerGaugeProp
 
   return (
     <div className="relative flex flex-col items-center">
-      <svg className="w-40 h-40 -rotate-[135deg]" viewBox="0 0 160 160">
+      <svg className="w-32 h-32 sm:w-40 sm:h-40 -rotate-[135deg]" viewBox="0 0 160 160">
         {/* Background arc */}
         <circle
           cx="80"
@@ -57,13 +57,12 @@ const SpeedometerGauge = ({ value, maxValue, label, unit }: SpeedometerGaugeProp
           </linearGradient>
         </defs>
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
-        <span className="text-3xl font-bold text-foreground transition-all duration-500">
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-2 sm:pt-4">
+        <span className="text-2xl sm:text-3xl font-bold text-foreground transition-all duration-500">
           {animatedValue.toFixed(1)}
         </span>
-        <span className="text-sm text-muted-foreground">{unit}</span>
+        <span className="text-[10px] sm:text-sm text-muted-foreground uppercase font-semibold tracking-wider">{unit}</span>
       </div>
-      <span className="mt-2 text-sm font-medium text-muted-foreground">{label}</span>
     </div>
   );
 };
