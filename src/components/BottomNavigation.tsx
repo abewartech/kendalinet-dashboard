@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft, Workflow, Plug } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft, Workflow, Plug, HardDrive } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -27,6 +27,7 @@ const navItems = [
   { id: "wifi", label: "WiFi", icon: Wifi },
   { id: "guestwifi", label: "Guest", icon: UserPlus },
   { id: "qrcode", label: "QR Code", icon: QrCode },
+  { id: "sistem", label: "Sistem", icon: HardDrive },
   { id: "admin", label: "Admin", icon: Settings },
 ];
 
