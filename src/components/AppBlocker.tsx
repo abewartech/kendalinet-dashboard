@@ -5,9 +5,9 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  AppWindow, Facebook, Youtube, Music2, MessageCircle, 
-  Instagram, Twitter, Gamepad2, ShoppingBag, Plus, Clock 
+import {
+  AppWindow, Facebook, Youtube, Music2, MessageCircle,
+  Instagram, Twitter, Gamepad2, ShoppingBag, Plus, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -109,7 +109,7 @@ const AppBlocker = () => {
   const [showSchedule, setShowSchedule] = useState<string | null>(null);
 
   const handleToggleBlock = (id: string) => {
-    setApps(prev => prev.map(app => 
+    setApps(prev => prev.map(app =>
       app.id === id ? { ...app, isBlocked: !app.isBlocked } : app
     ));
     const app = apps.find(a => a.id === id);
@@ -117,13 +117,13 @@ const AppBlocker = () => {
   };
 
   const handleToggleSchedule = (id: string) => {
-    setApps(prev => prev.map(app => 
+    setApps(prev => prev.map(app =>
       app.id === id ? { ...app, scheduleEnabled: !app.scheduleEnabled } : app
     ));
   };
 
   const handleUpdateSchedule = (id: string, start: string, end: string) => {
-    setApps(prev => prev.map(app => 
+    setApps(prev => prev.map(app =>
       app.id === id ? { ...app, scheduleStart: start, scheduleEnd: end } : app
     ));
     toast.success('Jadwal blokir diperbarui');
@@ -158,9 +158,9 @@ const AppBlocker = () => {
 
       {/* Quick Actions */}
       <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="flex-1"
           onClick={() => {
             setApps(prev => prev.map(app => ({ ...app, isBlocked: true })));
@@ -169,9 +169,9 @@ const AppBlocker = () => {
         >
           Blokir Semua
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="flex-1"
           onClick={() => {
             setApps(prev => prev.map(app => ({ ...app, isBlocked: false })));
@@ -188,45 +188,48 @@ const AppBlocker = () => {
           {apps.map((app) => (
             <div key={app.id}>
               <div
-                className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                  app.isBlocked 
-                    ? 'bg-destructive/10 border-destructive/30' 
-                    : 'bg-background/30 border-border/30'
-                }`}
+                className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border transition-all duration-300 gap-3 ${app.isBlocked
+                    ? 'bg-destructive/10 border-destructive/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                    : 'bg-secondary/20 border-border/30 hover:bg-secondary/30'
+                  }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${app.isBlocked ? 'bg-destructive/20' : 'bg-background/50'}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`p-2.5 rounded-xl shrink-0 transition-colors ${app.isBlocked ? 'bg-destructive/20' : 'bg-background/50'}`}>
                     {app.icon}
                   </div>
-                  <div>
-                    <div className="font-medium text-sm flex items-center gap-2">
-                      {app.name}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5 overflow-hidden">
+                      <span className="font-semibold text-sm truncate">{app.name}</span>
                       {app.scheduleEnabled && (
-                        <Badge variant="outline" className="text-xs">
-                          <Clock className="w-3 h-3 mr-1" />
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 shrink-0">
+                          <Clock className="w-2.5 h-2.5 mr-1" />
                           {app.scheduleStart}-{app.scheduleEnd}
                         </Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[10px] text-muted-foreground truncate opacity-70 mt-0.5">
                       {app.domains.slice(0, 2).join(', ')}
                       {app.domains.length > 2 && ` +${app.domains.length - 2}`}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center justify-end gap-3 shrink-0 ml-auto sm:ml-0 border-t sm:border-t-0 border-border/10 pt-2 sm:pt-0 mt-1 sm:mt-0">
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8"
+                    className={`h-9 w-9 rounded-full transition-colors ${showSchedule === app.id ? 'bg-primary/20 text-primary' : 'text-muted-foreground'}`}
                     onClick={() => setShowSchedule(showSchedule === app.id ? null : app.id)}
                   >
                     <Clock className="w-4 h-4" />
                   </Button>
-                  <Switch
-                    checked={app.isBlocked}
-                    onCheckedChange={() => handleToggleBlock(app.id)}
-                  />
+                  <div className="flex items-center gap-2 pl-2 border-l border-border/20">
+                    <Switch
+                      checked={app.isBlocked}
+                      onCheckedChange={() => handleToggleBlock(app.id)}
+                      className="scale-110"
+                    />
+                  </div>
                 </div>
               </div>
 
