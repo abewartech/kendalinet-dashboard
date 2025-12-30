@@ -35,6 +35,8 @@ import UPnPManagement from "@/components/UPnPManagement";
 import SystemManagement from "@/components/SystemManagement";
 import CaptivePortal from "@/components/CaptivePortal";
 import LoadBalancing from "@/components/LoadBalancing";
+import MACCloning from "@/components/MACCloning";
+import VLANManagement from "@/components/VLANManagement";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -557,6 +559,18 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "loadbalance" && (
         <div className="px-4">
           <LoadBalancing />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "macclone" && (
+        <div className="px-4">
+          <MACCloning />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "vlan" && (
+        <div className="px-4">
+          <VLANManagement />
         </div>
       )}
 
