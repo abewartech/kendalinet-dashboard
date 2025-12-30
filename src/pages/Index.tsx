@@ -32,6 +32,7 @@ import PortForwarding from "@/components/PortForwarding";
 import FirewallRules from "@/components/FirewallRules";
 import QoSManagement from "@/components/QoSManagement";
 import UPnPManagement from "@/components/UPnPManagement";
+import SystemManagement from "@/components/SystemManagement";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -536,6 +537,12 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "tagihan" && (
         <div className="px-4">
           <BillingReport usedGB={usedQuota} totalGB={100} />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "sistem" && (
+        <div className="px-4">
+          <SystemManagement />
         </div>
       )}
 
