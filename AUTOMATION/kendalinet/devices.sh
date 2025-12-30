@@ -33,10 +33,18 @@ if [ -f /tmp/dhcp.leases ]; then
                 online=true
             fi
             
+            # Check if blocked
+            blocked=false
+            if [ -f /etc/kendalinet/blocked_macs ]; then
+                if grep -qi "$mac" /etc/kendalinet/blocked_macs; then
+                    blocked=true
+                fi
+            fi
+
             # Simulate bandwidth
             bandwidth=$((RANDOM % 100 + 1))
             
-            devices="$devices{\"mac\":\"$mac\",\"ip\":\"$ip\",\"name\":\"$name\",\"online\":$online,\"bandwidth\":$bandwidth}"
+            devices="$devices{\"mac\":\"$mac\",\"ip\":\"$ip\",\"name\":\"$name\",\"online\":$online,\"bandwidth\":$bandwidth,\"blocked\":$blocked}"
         fi
     done < /tmp/dhcp.leases
 fi
