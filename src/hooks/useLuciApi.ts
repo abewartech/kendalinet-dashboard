@@ -143,7 +143,7 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     };
 
     const fetchVouchers = async () => {
-        const url = `${CGI_BASE}/vouchers.sh`;
+        const url = `${CGI_BASE}/vouchers_list.sh`;
         try {
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch Vouchers`);
@@ -151,6 +151,32 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
             setVouchersInfo(data);
         } catch (err: any) {
             console.error(`[Vouchers] Fail: ${err.message}`);
+        }
+    };
+
+    const createVoucher = async (params: { duration: number, quota: number, speedLimit: number }) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/vouchers_create.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const deleteVoucher = async (code: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/vouchers_delete.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
         }
     };
 
@@ -289,6 +315,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         fetchWifi,
         fetchSystem,
         fetchTraffic,
+        fetchVouchers,
+        createVoucher,
+        deleteVoucher,
         saveWifi,
         saveDns,
         applyBandwidthLimit,

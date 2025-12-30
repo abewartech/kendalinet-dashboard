@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Ticket, Copy, Trash2, Plus, Clock, Wifi, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useLuciApi } from '@/hooks/useLuciApi';
+
 interface Voucher {
-  id: string;
+  id: string; // This will be the voucher code from the backend
   code: string;
   duration: number; // in hours
   quota: number; // in GB
@@ -20,62 +22,37 @@ interface Voucher {
   usedBy?: string;
 }
 
-const STORAGE_KEY = 'kendali-net-vouchers';
-
-const generateVoucherCode = (): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    if (i === 4) code += '-';
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-};
-
 export const VoucherSystem = () => {
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const { vouchersInfo, fetchVouchers, createVoucher, deleteVoucher } = useLuciApi();
   const [showCreate, setShowCreate] = useState(false);
   const [duration, setDuration] = useState('24');
   const [quota, setQuota] = useState('5');
   const [speedLimit, setSpeedLimit] = useState('10');
   const [quantity, setQuantity] = useState('1');
 
-  // Load from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setVouchers(parsed.map((v: Voucher) => ({
-        ...v,
-        createdAt: new Date(v.createdAt),
-        usedAt: v.usedAt ? new Date(v.usedAt) : undefined
-      })));
-    }
+    fetchVouchers();
   }, []);
 
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(vouchers));
-  }, [vouchers]);
-
-  const handleCreateVouchers = () => {
+  const handleCreateVouchers = async () => {
     const qty = parseInt(quantity);
-    const newVouchers: Voucher[] = [];
+    let successCount = 0;
 
     for (let i = 0; i < qty; i++) {
-      newVouchers.push({
-        id: crypto.randomUUID(),
-        code: generateVoucherCode(),
+      const result = await createVoucher({
         duration: parseInt(duration),
         quota: parseInt(quota),
         speedLimit: parseInt(speedLimit),
-        status: 'active',
-        createdAt: new Date()
       });
+      if (result.success) successCount++;
     }
 
-    setVouchers(prev => [...newVouchers, ...prev]);
-    toast.success(`${qty} voucher berhasil dibuat`);
+    if (successCount > 0) {
+      toast.success(`${successCount} voucher berhasil dibuat`);
+      fetchVouchers();
+    } else {
+      toast.error('Gagal membuat voucher');
+    }
     setShowCreate(false);
   };
 
@@ -84,18 +61,24 @@ export const VoucherSystem = () => {
     toast.success('Kode disalin!');
   };
 
-  const handleDeleteVoucher = (id: string) => {
-    setVouchers(prev => prev.filter(v => v.id !== id));
-    toast.success('Voucher dihapus');
+  const handleDeleteVoucher = async (id: string) => {
+    const result = await deleteVoucher(id); // Code is ID in our case
+    if (result.success) {
+      toast.success('Voucher dihapus');
+      fetchVouchers();
+    } else {
+      toast.error('Gagal menghapus voucher');
+    }
   };
 
-  const handleMarkAsUsed = (id: string) => {
-    setVouchers(prev => prev.map(v =>
-      v.id === id ? { ...v, status: 'used' as const, usedAt: new Date() } : v
-    ));
-    toast.success('Voucher ditandai terpakai');
+  const handleMarkAsUsed = async (id: string) => {
+    // In openNDS real flow, 'marking as used' isn't a separate script usually,
+    // but we can use our delete script to 'deactivate' it if we want.
+    // Or just treat used vouchers as deleted from the pool.
+    await handleDeleteVoucher(id);
   };
 
+  const vouchers = (vouchersInfo?.vouchers || []) as Voucher[];
   const activeVouchers = vouchers.filter(v => v.status === 'active');
   const usedVouchers = vouchers.filter(v => v.status === 'used' || v.status === 'expired');
 
