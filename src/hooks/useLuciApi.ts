@@ -43,6 +43,8 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     const [ztPeers, setZtPeers] = useState<any[]>([]);
     const [mwan3Status, setMwan3Status] = useState<any>(null);
     const [mwan3Interfaces, setMwan3Interfaces] = useState<any[]>([]);
+    const [firmwareInfo, setFirmwareInfo] = useState<any>(null);
+    const [backups, setBackups] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -464,6 +466,100 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         }
     };
 
+    const fetchFirmwareInfo = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/system_firmware_info.sh`);
+            const data = await res.json();
+            setFirmwareInfo(data);
+        } catch (err) {
+            console.error('[Firmware Info] Fail:', err);
+        }
+    };
+
+    const checkFirmwareUpdate = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/system_check_update.sh`);
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const upgradeFirmware = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/system_upgrade.sh`);
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const toggleAutoUpdate = async (enabled: boolean) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/system_autoupdate.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const fetchBackups = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/backup_list.sh`);
+            const data = await res.json();
+            setBackups(data || []);
+        } catch (err) {
+            console.error('[Backups] Fail:', err);
+        }
+    };
+
+    const createBackup = async (type: 'full' | 'config' | 'network') => {
+        try {
+            const res = await fetch(`${CGI_BASE}/backup_create.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const restoreBackup = async (file: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/backup_restore.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const deleteBackup = async (file: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/backup_delete.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const getBackupDownloadUrl = (file: string) => {
+        return `${CGI_BASE}/backup_download.sh?${file}`;
+    };
+
     useEffect(() => {
         if (!enabled) return;
 
@@ -484,7 +580,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                 fetchZtNetworks(),
                 fetchZtPeers(),
                 fetchMwan3Status(),
-                fetchMwan3Interfaces()
+                fetchMwan3Interfaces(),
+                fetchFirmwareInfo(),
+                fetchBackups()
             ]);
             setLoading(false);
         };
@@ -545,6 +643,17 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         saveWifi,
         saveDns,
         applyBandwidthLimit,
-        optimizeNetwork
+        optimizeNetwork,
+        firmwareInfo,
+        backups,
+        fetchFirmwareInfo,
+        checkFirmwareUpdate,
+        upgradeFirmware,
+        toggleAutoUpdate,
+        fetchBackups,
+        createBackup,
+        restoreBackup,
+        deleteBackup,
+        getBackupDownloadUrl
     };
 };

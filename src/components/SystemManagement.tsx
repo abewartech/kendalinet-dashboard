@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  HardDrive, 
-  Download, 
-  Upload, 
-  RefreshCw, 
-  Shield, 
-  CheckCircle2, 
+import {
+  HardDrive,
+  Download,
+  Upload,
+  RefreshCw,
+  Shield,
+  CheckCircle2,
   AlertTriangle,
   Clock,
   FileArchive,
@@ -22,6 +22,7 @@ import {
   Zap
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLuciApi } from "@/hooks/useLuciApi";
 
 interface FirmwareInfo {
   currentVersion: string;
@@ -33,101 +34,123 @@ interface FirmwareInfo {
 }
 
 interface BackupFile {
-  id: string;
   name: string;
   date: string;
   size: string;
-  type: "full" | "config" | "network";
+  type?: "full" | "config" | "network";
 }
 
 const SystemManagement = () => {
+  const {
+    firmwareInfo,
+    backups,
+    fetchFirmwareInfo,
+    checkFirmwareUpdate,
+    upgradeFirmware,
+    toggleAutoUpdate: toggleAutoUpdateApi,
+    fetchBackups,
+    createBackup,
+    restoreBackup,
+    deleteBackup,
+    getBackupDownloadUrl
+  } = useLuciApi();
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
   const [autoUpdate, setAutoUpdate] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
-  const [firmwareInfo] = useState<FirmwareInfo>({
-    currentVersion: "23.05.3",
-    latestVersion: "23.05.4",
-    releaseDate: "2024-12-15",
-    size: "12.5 MB",
-    changelog: [
-      "Peningkatan keamanan WPA3",
-      "Perbaikan bug QoS engine",
-      "Optimasi penggunaan memori",
-      "Update kernel Linux 5.15.150"
-    ],
-    isUpdateAvailable: true
-  });
+  useEffect(() => {
+    fetchFirmwareInfo();
+    fetchBackups();
+  }, []);
 
-  const [backupFiles, setBackupFiles] = useState<BackupFile[]>([
-    { id: "1", name: "backup_full_20241225.tar.gz", date: "25 Des 2024, 10:30", size: "2.4 MB", type: "full" },
-    { id: "2", name: "backup_config_20241220.tar.gz", date: "20 Des 2024, 14:15", size: "156 KB", type: "config" },
-    { id: "3", name: "backup_network_20241215.tar.gz", date: "15 Des 2024, 09:00", size: "84 KB", type: "network" },
-  ]);
-
-  const handleCheckUpdate = () => {
+  const handleCheckUpdate = async () => {
     toast.info("Memeriksa pembaruan firmware...");
-    setTimeout(() => {
-      toast.success("Firmware terbaru tersedia: v" + firmwareInfo.latestVersion);
-    }, 2000);
+    const res = await checkFirmwareUpdate();
+    if (res.updateAvailable) {
+      setUpdateAvailable(true);
+      toast.success("Pembaruan firmware tersedia!");
+    } else {
+      setUpdateAvailable(false);
+      toast.info("Firmware sudah dalam versi terbaru");
+    }
   };
 
-  const handleStartUpdate = () => {
+  const handleStartUpdate = async () => {
     setIsUpdating(true);
-    setUpdateProgress(0);
-    
-    const interval = setInterval(() => {
-      setUpdateProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUpdating(false);
-          toast.success("Firmware berhasil diperbarui! Router akan restart...");
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 500);
+    setUpdateProgress(10);
+
+    const res = await upgradeFirmware();
+    if (res.success) {
+      setUpdateProgress(100);
+      toast.success(res.message || "Firmware sedang diperbarui...");
+    } else {
+      toast.error(res.message || "Gagal memulai pembaruan firmware");
+      setIsUpdating(false);
+    }
   };
 
-  const handleCreateBackup = (type: "full" | "config" | "network") => {
+  const handleToggleAutoUpdate = async (val: boolean) => {
+    setAutoUpdate(val);
+    const res = await toggleAutoUpdateApi(val);
+    if (res.success) {
+      toast.success(val ? "Auto update diaktifkan" : "Auto update dinonaktifkan");
+    } else {
+      toast.error("Gagal mengubah pengaturan auto update");
+      setAutoUpdate(!val);
+    }
+  };
+
+  const handleCreateBackup = async (type: "full" | "config" | "network") => {
     setIsBackingUp(true);
     const typeLabels = { full: "Lengkap", config: "Konfigurasi", network: "Jaringan" };
-    
+
     toast.info(`Membuat backup ${typeLabels[type]}...`);
-    
-    setTimeout(() => {
-      const newBackup: BackupFile = {
-        id: Date.now().toString(),
-        name: `backup_${type}_${new Date().toISOString().slice(0,10).replace(/-/g, '')}.tar.gz`,
-        date: new Date().toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-        size: type === "full" ? "2.1 MB" : type === "config" ? "145 KB" : "78 KB",
-        type
-      };
-      setBackupFiles([newBackup, ...backupFiles]);
-      setIsBackingUp(false);
+    const res = await createBackup(type);
+
+    if (res.success) {
       toast.success(`Backup ${typeLabels[type]} berhasil dibuat!`);
-    }, 3000);
+      fetchBackups();
+    } else {
+      toast.error("Gagal membuat backup");
+    }
+    setIsBackingUp(false);
   };
 
   const handleDownloadBackup = (backup: BackupFile) => {
-    toast.success(`Mengunduh ${backup.name}...`);
+    const url = getBackupDownloadUrl(backup.name);
+    window.open(url, '_blank');
   };
 
-  const handleRestoreBackup = (backup: BackupFile) => {
+  const handleRestoreBackup = async (backup: BackupFile) => {
+    if (!confirm(`Apakah Anda yakin ingin memulihkan sistem dari backup ${backup.name}? Router akan restart.`)) {
+      return;
+    }
+
     setIsRestoring(true);
-    toast.info(`Memulihkan dari ${backup.name}...`);
-    
-    setTimeout(() => {
-      setIsRestoring(false);
+    const res = await restoreBackup(backup.name);
+
+    if (res.success) {
       toast.success("Konfigurasi berhasil dipulihkan! Router akan restart...");
-    }, 4000);
+    } else {
+      toast.error("Gagal memulihkan backup");
+      setIsRestoring(false);
+    }
   };
 
-  const handleDeleteBackup = (id: string) => {
-    setBackupFiles(backupFiles.filter(b => b.id !== id));
-    toast.success("Backup dihapus");
+  const handleDeleteBackup = async (name: string) => {
+    if (!confirm(`Hapus file backup ${name}?`)) return;
+
+    const res = await deleteBackup(name);
+    if (res.success) {
+      toast.success("Backup dihapus");
+      fetchBackups();
+    } else {
+      toast.error("Gagal menghapus backup");
+    }
   };
 
   const handleUploadFirmware = () => {
@@ -138,22 +161,18 @@ const SystemManagement = () => {
     toast.info("Fitur upload backup akan tersedia di versi mendatang");
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "full": return "bg-primary/20 text-primary";
-      case "config": return "bg-blue-500/20 text-blue-400";
-      case "network": return "bg-green-500/20 text-green-400";
-      default: return "bg-muted text-muted-foreground";
-    }
+  const getTypeColor = (name: string) => {
+    if (name.includes("full")) return "bg-primary/20 text-primary";
+    if (name.includes("config")) return "bg-blue-500/20 text-blue-400";
+    if (name.includes("network")) return "bg-green-500/20 text-green-400";
+    return "bg-muted text-muted-foreground";
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "full": return "Lengkap";
-      case "config": return "Config";
-      case "network": return "Network";
-      default: return type;
-    }
+  const getTypeLabel = (name: string) => {
+    if (name.includes("full")) return "Lengkap";
+    if (name.includes("config")) return "Config";
+    if (name.includes("network")) return "Network";
+    return "Backup";
   };
 
   return (
@@ -194,8 +213,8 @@ const SystemManagement = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold">v{firmwareInfo.currentVersion}</p>
-                  <p className="text-sm text-muted-foreground">OpenWrt Stable Release</p>
+                  <p className="text-2xl font-bold">{firmwareInfo?.currentVersion || "Loading..."}</p>
+                  <p className="text-sm text-muted-foreground">{firmwareInfo?.kernel || "Kernel info..."}</p>
                 </div>
                 <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
                   <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -204,15 +223,15 @@ const SystemManagement = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={handleCheckUpdate}
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Cek Pembaruan
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={handleUploadFirmware}
                 >
@@ -223,7 +242,7 @@ const SystemManagement = () => {
           </Card>
 
           {/* Update Available */}
-          {firmwareInfo.isUpdateAvailable && (
+          {updateAvailable && (
             <Card className="glass-card border-primary/30 bg-primary/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -234,12 +253,10 @@ const SystemManagement = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xl font-bold text-primary">v{firmwareInfo.latestVersion}</p>
+                    <p className="text-xl font-bold text-primary">Versi Terbaru Ditemukan</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-3 h-3" />
-                      <span>{firmwareInfo.releaseDate}</span>
-                      <span>•</span>
-                      <span>{firmwareInfo.size}</span>
+                      <span>{new Date().toLocaleDateString()}</span>
                     </div>
                   </div>
                   <Badge className="bg-primary/20 text-primary">
@@ -249,15 +266,10 @@ const SystemManagement = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Catatan Perubahan:</p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {firmwareInfo.changelog.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-green-400 mt-1 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm font-medium">Catatan:</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pembaruan sistem tersedia melalui repositori opkg. Klik tombol di bawah untuk memulai proses upgrade.
+                  </p>
                 </div>
 
                 {isUpdating ? (
@@ -272,7 +284,7 @@ const SystemManagement = () => {
                     </p>
                   </div>
                 ) : (
-                  <Button 
+                  <Button
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={handleStartUpdate}
                   >
@@ -294,10 +306,10 @@ const SystemManagement = () => {
                   </div>
                   <div>
                     <p className="font-medium">Pembaruan Otomatis</p>
-                    <p className="text-sm text-muted-foreground">Periksa & unduh otomatis</p>
+                    <p className="text-sm text-muted-foreground">Periksa & unduh otomatis harian</p>
                   </div>
                 </div>
-                <Switch checked={autoUpdate} onCheckedChange={setAutoUpdate} />
+                <Switch checked={autoUpdate} onCheckedChange={handleToggleAutoUpdate} />
               </div>
             </CardContent>
           </Card>
@@ -310,7 +322,7 @@ const SystemManagement = () => {
                 <div className="text-sm">
                   <p className="font-medium text-yellow-400">Peringatan</p>
                   <p className="text-muted-foreground">
-                    Pastikan backup konfigurasi sebelum memperbarui firmware. 
+                    Pastikan backup konfigurasi sebelum memperbarui firmware.
                     Proses update membutuhkan waktu 2-5 menit.
                   </p>
                 </div>
@@ -331,8 +343,8 @@ const SystemManagement = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-col h-auto py-3"
                   onClick={() => handleCreateBackup("full")}
                   disabled={isBackingUp}
@@ -340,8 +352,8 @@ const SystemManagement = () => {
                   <HardDrive className="w-5 h-5 mb-1 text-primary" />
                   <span className="text-xs">Lengkap</span>
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-col h-auto py-3"
                   onClick={() => handleCreateBackup("config")}
                   disabled={isBackingUp}
@@ -349,8 +361,8 @@ const SystemManagement = () => {
                   <FileArchive className="w-5 h-5 mb-1 text-blue-400" />
                   <span className="text-xs">Config</span>
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-col h-auto py-3"
                   onClick={() => handleCreateBackup("network")}
                   disabled={isBackingUp}
@@ -359,7 +371,7 @@ const SystemManagement = () => {
                   <span className="text-xs">Network</span>
                 </Button>
               </div>
-              
+
               {isBackingUp && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -372,8 +384,8 @@ const SystemManagement = () => {
           {/* Upload Backup */}
           <Card className="glass-card border-border/50">
             <CardContent className="pt-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 onClick={handleUploadBackup}
               >
@@ -391,13 +403,13 @@ const SystemManagement = () => {
                   <Clock className="w-5 h-5 text-primary" />
                   Riwayat Backup
                 </span>
-                <Badge variant="outline">{backupFiles.length} file</Badge>
+                <Badge variant="outline">{(backups || []).length} file</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {backupFiles.map((backup) => (
-                <div 
-                  key={backup.id}
+              {(backups || []).map((backup, idx) => (
+                <div
+                  key={idx}
                   className="p-3 rounded-xl bg-card/50 border border-border/30 space-y-2"
                 >
                   <div className="flex items-start justify-between">
@@ -409,24 +421,24 @@ const SystemManagement = () => {
                         <span>{backup.size}</span>
                       </div>
                     </div>
-                    <Badge className={getTypeColor(backup.type)}>
-                      {getTypeLabel(backup.type)}
+                    <Badge className={getTypeColor(backup.name)}>
+                      {getTypeLabel(backup.name)}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
                       onClick={() => handleDownloadBackup(backup)}
                     >
                       <Download className="w-3 h-3 mr-1" />
                       Unduh
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
                       onClick={() => handleRestoreBackup(backup)}
                       disabled={isRestoring}
@@ -434,10 +446,10 @@ const SystemManagement = () => {
                       <RotateCcw className="w-3 h-3 mr-1" />
                       Pulihkan
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteBackup(backup.id)}
+                      onClick={() => handleDeleteBackup(backup.name)}
                     >
                       <Trash2 className="w-3 h-3 text-red-400" />
                     </Button>
@@ -445,7 +457,7 @@ const SystemManagement = () => {
                 </div>
               ))}
 
-              {backupFiles.length === 0 && (
+              {(!backups || backups.length === 0) && (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileArchive className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>Belum ada backup tersimpan</p>
