@@ -274,14 +274,14 @@ const LoadBalancing = () => {
             <CardContent className="space-y-3">
               {/* Add Form */}
               {showAddForm && (
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Label/Nama</Label>
                       <Input
                         value={newInterface.name}
                         onChange={(e) => setNewInterface({ ...newInterface, name: e.target.value })}
-                        placeholder="WAN - ISP"
+                        placeholder="Contoh: WAN 1"
                       />
                     </div>
                     <div className="space-y-1">
@@ -289,7 +289,8 @@ const LoadBalancing = () => {
                       <Input
                         value={newInterface.iface}
                         onChange={(e) => setNewInterface({ ...newInterface, iface: e.target.value })}
-                        placeholder="wan2"
+                        placeholder="Contoh: wan, eth0"
+                        className="font-mono"
                       />
                     </div>
                   </div>
@@ -322,63 +323,75 @@ const LoadBalancing = () => {
               {interfaces.map((iface) => (
                 <div
                   key={iface.iface}
-                  className={`p-4 rounded-xl border space-y-3 ${iface.enabled ? "bg-card/50 border-border/30" : "bg-muted/20 border-muted/30 opacity-60"}`}
+                  className={`p-4 rounded-xl border space-y-4 ${iface.enabled ? "bg-card/50 border-border/30" : "bg-muted/20 border-muted/30 opacity-60"}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center border border-border/50">
-                        {getTypeIcon(iface.type || "ethernet")}
+                  <div className="flex flex-col gap-3 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center border border-border/50 shrink-0">
+                          {getTypeIcon(iface.type || "ethernet")}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm sm:text-base truncate">
+                            {iface.name && iface.name !== iface.iface ? iface.name : `Interface ${iface.iface}`}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <code className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground uppercase font-mono">
+                              {iface.iface}
+                            </code>
+                            <span className="text-[10px] text-muted-foreground">Metric: {iface.metric}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium capitalize">{iface.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{iface.iface} | Metric: {iface.metric}</p>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className={`${getStatusColor(iface.status)} text-[10px] h-5 px-1.5`}>
+                          {iface.status}
+                        </Badge>
+                        <Switch
+                          checked={iface.enabled}
+                          onCheckedChange={() => toast.info("Gunakan hapus/tambah untuk saat ini")}
+                        />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(iface.status)}>
-                        {iface.status}
-                      </Badge>
-                      <Switch
-                        checked={iface.enabled}
-                        onCheckedChange={() => toast.info("Gunakan hapus/tambah untuk saat ini")}
-                      />
                     </div>
                   </div>
 
                   {/* Removed download/upload/latency/usage display */}
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Bobot (mwan3 weight)</span>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Distribusi Beban</span>
                       <span className="font-medium">{iface.weight} ({totalWeight > 0 ? ((iface.weight / totalWeight) * 100).toFixed(0) : 0}% aktual)</span>
                     </div>
-                    <Input
-                      type="range"
-                      value={iface.weight}
-                      onChange={(e) => handleWeightChange(iface.iface, parseInt(e.target.value))}
-                      min={1}
-                      max={100}
-                      className="w-full h-2"
-                      disabled={!iface.enabled}
-                    />
+                    <div className="px-1">
+                      <Input
+                        type="range"
+                        value={iface.weight}
+                        onChange={(e) => handleWeightChange(iface.iface, parseInt(e.target.value))}
+                        min={1}
+                        max={100}
+                        className="w-full h-2 cursor-pointer"
+                        disabled={!iface.enabled}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-9"
                       onClick={() => handleTestConnection(iface.iface)}
                     >
-                      <RefreshCw className="w-3 h-3 mr-1" />
+                      <RefreshCw className="w-3.5 h-3.5 mr-2" />
                       Check
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="w-9 h-9 p-0"
                       onClick={() => handleDeleteInterface(iface.iface)}
                     >
-                      <Trash2 className="w-3 h-3 text-red-400" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
                     </Button>
                   </div>
                 </div>
