@@ -41,6 +41,8 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     const [ztStatus, setZtStatus] = useState<any>(null);
     const [ztNetworks, setZtNetworks] = useState<any[]>([]);
     const [ztPeers, setZtPeers] = useState<any[]>([]);
+    const [mwan3Status, setMwan3Status] = useState<any>(null);
+    const [mwan3Interfaces, setMwan3Interfaces] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -327,6 +329,91 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         }
     };
 
+    const fetchMwan3Status = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_status.sh`);
+            const data = await res.json();
+            setMwan3Status(data);
+        } catch (err) {
+            console.error('[mwan3 Status] Fail:', err);
+        }
+    };
+
+    const fetchMwan3Interfaces = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_list.sh`);
+            const data = await res.json();
+            setMwan3Interfaces(data.interfaces || []);
+        } catch (err) {
+            console.error('[mwan3 Interfaces] Fail:', err);
+        }
+    };
+
+    const toggleMwan3 = async (enabled: boolean) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_toggle.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const setMwan3Mode = async (mode: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_set_mode.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const addMwan3Wan = async (params: { name: string, iface: string, weight: number, metric?: number }) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_add_wan.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const deleteMwan3Wan = async (iface: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_delete_wan.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ iface }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const setMwan3Weight = async (iface: string, weight: number) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/mwan3_set_weight.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ iface, weight }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
     const saveWifi = async (ssid: string, hidden: boolean, password?: string) => {
         try {
             const res = await fetch(`${CGI_BASE}/wifi_save.sh`, {
@@ -395,7 +482,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                 fetchTraffic(),
                 fetchZtStatus(),
                 fetchZtNetworks(),
-                fetchZtPeers()
+                fetchZtPeers(),
+                fetchMwan3Status(),
+                fetchMwan3Interfaces()
             ]);
             setLoading(false);
         };
@@ -425,6 +514,8 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         ztStatus,
         ztNetworks,
         ztPeers,
+        mwan3Status,
+        mwan3Interfaces,
         loading,
         error,
         fetchStatus,
@@ -444,6 +535,13 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         setZtFlags,
         toggleZtBridge,
         toggleZtFirewall,
+        fetchMwan3Status,
+        fetchMwan3Interfaces,
+        toggleMwan3,
+        setMwan3Mode,
+        addMwan3Wan,
+        deleteMwan3Wan,
+        setMwan3Weight,
         saveWifi,
         saveDns,
         applyBandwidthLimit,

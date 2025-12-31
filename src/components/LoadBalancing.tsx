@@ -7,11 +7,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Network, 
-  Plus, 
-  Trash2, 
-  RefreshCw, 
+import {
+  Network,
+  Plus,
+  Trash2,
+  RefreshCw,
   Activity,
   Wifi,
   Signal,
@@ -43,121 +43,113 @@ interface WANInterface {
 
 type BalanceMode = "weighted" | "failover" | "round-robin" | "least-connections";
 
+import { useEffect } from "react";
+import { useLuciApi } from "@/hooks/useLuciApi";
+
 const LoadBalancing = () => {
-  const [enabled, setEnabled] = useState(true);
+  const {
+    mwan3Status,
+    mwan3Interfaces,
+    fetchMwan3Status,
+    fetchMwan3Interfaces,
+    toggleMwan3,
+    setMwan3Mode,
+    addMwan3Wan,
+    deleteMwan3Wan,
+    setMwan3Weight
+  } = useLuciApi();
+
   const [balanceMode, setBalanceMode] = useState<BalanceMode>("weighted");
   const [healthCheckInterval, setHealthCheckInterval] = useState(30);
   const [failoverThreshold, setFailoverThreshold] = useState(3);
-
-  const [interfaces, setInterfaces] = useState<WANInterface[]>([
-    {
-      id: "1",
-      name: "WAN1 - Indihome",
-      type: "fiber",
-      ip: "192.168.1.1",
-      gateway: "192.168.1.254",
-      weight: 50,
-      enabled: true,
-      status: "online",
-      downloadSpeed: 45.2,
-      uploadSpeed: 12.8,
-      latency: 15,
-      usage: 65
-    },
-    {
-      id: "2",
-      name: "WAN2 - Biznet",
-      type: "fiber",
-      ip: "192.168.2.1",
-      gateway: "192.168.2.254",
-      weight: 30,
-      enabled: true,
-      status: "online",
-      downloadSpeed: 32.5,
-      uploadSpeed: 8.4,
-      latency: 22,
-      usage: 40
-    },
-    {
-      id: "3",
-      name: "WAN3 - 4G Backup",
-      type: "4g",
-      ip: "10.0.0.1",
-      gateway: "10.0.0.254",
-      weight: 20,
-      enabled: true,
-      status: "standby",
-      downloadSpeed: 0,
-      uploadSpeed: 0,
-      latency: 0,
-      usage: 0
-    }
-  ]);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newInterface, setNewInterface] = useState({
     name: "",
     type: "ethernet" as WANInterface["type"],
+    iface: "",
     ip: "",
     gateway: "",
-    weight: 10
+    weight: 1,
+    metric: 1
   });
 
-  const totalWeight = interfaces.filter(i => i.enabled).reduce((sum, i) => sum + i.weight, 0);
-  const onlineCount = interfaces.filter(i => i.status === "online").length;
-  const totalDownload = interfaces.filter(i => i.status === "online").reduce((sum, i) => sum + i.downloadSpeed, 0);
-  const totalUpload = interfaces.filter(i => i.status === "online").reduce((sum, i) => sum + i.uploadSpeed, 0);
+  useEffect(() => {
+    fetchMwan3Status();
+    fetchMwan3Interfaces();
+  }, []);
 
-  const handleAddInterface = () => {
-    if (!newInterface.name || !newInterface.ip || !newInterface.gateway) {
-      toast.error("Lengkapi semua field yang diperlukan");
+  const enabled = mwan3Status?.enabled || false;
+  const interfaces = (mwan3Interfaces || []) as any[];
+
+  const onlineCount = mwan3Status?.online || 0;
+  const totalWeight = interfaces.filter(i => i.enabled).reduce((sum, i) => sum + (i.weight || 0), 0);
+  const totalDownload = 0;
+  const totalUpload = 0;
+
+  const handleToggleLB = async (val: boolean) => {
+    const res = await toggleMwan3(val);
+    if (res.success) {
+      toast.success(val ? "Load Balancing diaktifkan" : "Load Balancing dinonaktifkan");
+      setTimeout(fetchMwan3Status, 1500);
+    } else {
+      toast.error("Gagal mengubah status Load Balancing");
+    }
+  };
+
+  const handleAddInterface = async () => {
+    if (!newInterface.iface) {
+      toast.error("Lengkapi Interface (contoh: wan2)");
       return;
     }
 
-    const newWan: WANInterface = {
-      id: Date.now().toString(),
-      ...newInterface,
-      enabled: true,
-      status: "offline",
-      downloadSpeed: 0,
-      uploadSpeed: 0,
-      latency: 0,
-      usage: 0
-    };
+    const res = await addMwan3Wan({
+      name: newInterface.name || newInterface.iface,
+      iface: newInterface.iface,
+      weight: newInterface.weight,
+      metric: newInterface.metric
+    });
 
-    setInterfaces([...interfaces, newWan]);
-    setNewInterface({ name: "", type: "ethernet", ip: "", gateway: "", weight: 10 });
-    setShowAddForm(false);
-    toast.success("Interface WAN ditambahkan");
+    if (res.success) {
+      setNewInterface({ name: "", type: "ethernet", iface: "", ip: "", gateway: "", weight: 1, metric: 1 });
+      setShowAddForm(false);
+      toast.success("Interface WAN ditambahkan");
+      fetchMwan3Interfaces();
+    } else {
+      toast.error("Gagal menambah WAN");
+    }
   };
 
-  const handleDeleteInterface = (id: string) => {
-    setInterfaces(interfaces.filter(i => i.id !== id));
-    toast.success("Interface WAN dihapus");
+  const handleDeleteInterface = async (iface: string) => {
+    const res = await deleteMwan3Wan(iface);
+    if (res.success) {
+      toast.success("Interface WAN dihapus");
+      fetchMwan3Interfaces();
+    } else {
+      toast.error("Gagal menghapus WAN");
+    }
   };
 
-  const handleToggleInterface = (id: string) => {
-    setInterfaces(interfaces.map(i => 
-      i.id === id ? { ...i, enabled: !i.enabled } : i
-    ));
+  const handleWeightChange = async (iface: string, weight: number) => {
+    const res = await setMwan3Weight(iface, weight);
+    if (res.success) {
+      toast.success(`Bobot ${iface} diperbarui`);
+      fetchMwan3Interfaces();
+    }
   };
 
-  const handleWeightChange = (id: string, weight: number) => {
-    setInterfaces(interfaces.map(i => 
-      i.id === id ? { ...i, weight: Math.max(1, Math.min(100, weight)) } : i
-    ));
+  const handleModeChange = async (mode: BalanceMode) => {
+    setBalanceMode(mode);
+    const res = await setMwan3Mode(mode);
+    if (res.success) {
+      toast.success(`Mode ganti ke ${mode}`);
+    }
   };
 
-  const handleTestConnection = (id: string) => {
-    const iface = interfaces.find(i => i.id === id);
-    toast.info(`Testing koneksi ${iface?.name}...`);
-    
-    setTimeout(() => {
-      setInterfaces(interfaces.map(i => 
-        i.id === id ? { ...i, status: "online", latency: Math.floor(Math.random() * 30) + 10 } : i
-      ));
-      toast.success(`${iface?.name} online!`);
-    }, 2000);
+  const handleTestConnection = (iface: string) => {
+    toast.info(`Checking status ${iface}...`);
+    fetchMwan3Status();
+    fetchMwan3Interfaces();
   };
 
   const getTypeIcon = (type: WANInterface["type"]) => {
@@ -208,11 +200,11 @@ const LoadBalancing = () => {
                 <Activity className={`w-5 h-5 ${enabled ? "text-primary" : "text-muted-foreground"}`} />
               </div>
               <div>
-                <p className="font-medium">Load Balancing</p>
-                <p className="text-sm text-muted-foreground">Multi-WAN aktif</p>
+                <p className="font-medium">Load Balancing (mwan3)</p>
+                <p className="text-sm text-muted-foreground">{enabled ? "Multi-WAN aktif" : "Layanan berhenti"}</p>
               </div>
             </div>
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch checked={enabled} onCheckedChange={handleToggleLB} />
           </div>
 
           {enabled && (
@@ -249,41 +241,16 @@ const LoadBalancing = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Select value={balanceMode} onValueChange={(v) => setBalanceMode(v as BalanceMode)}>
+              <Select value={balanceMode} onValueChange={handleModeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="weighted">Weighted Balance</SelectItem>
                   <SelectItem value="failover">Failover</SelectItem>
-                  <SelectItem value="round-robin">Round Robin</SelectItem>
-                  <SelectItem value="least-connections">Least Connections</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{getModeDescription(balanceMode)}</p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs">Health Check (detik)</Label>
-                  <Input 
-                    type="number"
-                    value={healthCheckInterval}
-                    onChange={(e) => setHealthCheckInterval(parseInt(e.target.value) || 30)}
-                    min={5}
-                    max={300}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Failover Threshold</Label>
-                  <Input 
-                    type="number"
-                    value={failoverThreshold}
-                    onChange={(e) => setFailoverThreshold(parseInt(e.target.value) || 3)}
-                    min={1}
-                    max={10}
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -295,8 +262,8 @@ const LoadBalancing = () => {
                   <Wifi className="w-5 h-5 text-primary" />
                   Interface WAN
                 </span>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowAddForm(!showAddForm)}
                 >
@@ -310,130 +277,85 @@ const LoadBalancing = () => {
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Nama</Label>
-                      <Input 
+                      <Label className="text-xs">Label/Nama</Label>
+                      <Input
                         value={newInterface.name}
-                        onChange={(e) => setNewInterface({...newInterface, name: e.target.value})}
+                        onChange={(e) => setNewInterface({ ...newInterface, name: e.target.value })}
                         placeholder="WAN - ISP"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Tipe</Label>
-                      <Select 
-                        value={newInterface.type} 
-                        onValueChange={(v) => setNewInterface({...newInterface, type: v as WANInterface["type"]})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fiber">Fiber</SelectItem>
-                          <SelectItem value="ethernet">Ethernet</SelectItem>
-                          <SelectItem value="4g">4G/LTE</SelectItem>
-                          <SelectItem value="dsl">DSL</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs">Interface (UCI)</Label>
+                      <Input
+                        value={newInterface.iface}
+                        onChange={(e) => setNewInterface({ ...newInterface, iface: e.target.value })}
+                        placeholder="wan2"
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">IP Address</Label>
-                      <Input 
-                        value={newInterface.ip}
-                        onChange={(e) => setNewInterface({...newInterface, ip: e.target.value})}
-                        placeholder="192.168.1.1"
+                      <Label className="text-xs">Bobot (1-100)</Label>
+                      <Input
+                        type="number"
+                        value={newInterface.weight}
+                        onChange={(e) => setNewInterface({ ...newInterface, weight: parseInt(e.target.value) })}
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Gateway</Label>
-                      <Input 
-                        value={newInterface.gateway}
-                        onChange={(e) => setNewInterface({...newInterface, gateway: e.target.value})}
-                        placeholder="192.168.1.254"
+                      <Label className="text-xs">Metric</Label>
+                      <Input
+                        type="number"
+                        value={newInterface.metric}
+                        onChange={(e) => setNewInterface({ ...newInterface, metric: parseInt(e.target.value) })}
                       />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Bobot ({newInterface.weight}%)</Label>
-                    <Input 
-                      type="range"
-                      value={newInterface.weight}
-                      onChange={(e) => setNewInterface({...newInterface, weight: parseInt(e.target.value)})}
-                      min={1}
-                      max={100}
-                      className="w-full"
-                    />
-                  </div>
                   <Button className="w-full" onClick={handleAddInterface}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Tambah WAN
+                    Tambah WAN ke mwan3
                   </Button>
                 </div>
               )}
 
               {/* Interface List */}
               {interfaces.map((iface) => (
-                <div 
-                  key={iface.id}
+                <div
+                  key={iface.iface}
                   className={`p-4 rounded-xl border space-y-3 ${iface.enabled ? "bg-card/50 border-border/30" : "bg-muted/20 border-muted/30 opacity-60"}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center border border-border/50">
-                        {getTypeIcon(iface.type)}
+                        {getTypeIcon(iface.type || "ethernet")}
                       </div>
                       <div>
-                        <p className="font-medium">{iface.name}</p>
-                        <p className="text-xs text-muted-foreground">{iface.ip} → {iface.gateway}</p>
+                        <p className="font-medium capitalize">{iface.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{iface.iface} | Metric: {iface.metric}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={getStatusColor(iface.status)}>
                         {iface.status}
                       </Badge>
-                      <Switch 
+                      <Switch
                         checked={iface.enabled}
-                        onCheckedChange={() => handleToggleInterface(iface.id)}
+                        onCheckedChange={() => toast.info("Gunakan hapus/tambah untuk saat ini")}
                       />
                     </div>
                   </div>
 
-                  {iface.enabled && iface.status === "online" && (
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div className="p-2 rounded-lg bg-background/50">
-                        <div className="flex items-center justify-center gap-1">
-                          <ArrowDownCircle className="w-3 h-3 text-green-400" />
-                          <span className="text-sm font-medium">{iface.downloadSpeed}</span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">Mbps</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-background/50">
-                        <div className="flex items-center justify-center gap-1">
-                          <ArrowUpCircle className="w-3 h-3 text-blue-400" />
-                          <span className="text-sm font-medium">{iface.uploadSpeed}</span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">Mbps</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-background/50">
-                        <span className="text-sm font-medium">{iface.latency}</span>
-                        <p className="text-[10px] text-muted-foreground">ms</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-background/50">
-                        <span className="text-sm font-medium">{iface.usage}%</span>
-                        <p className="text-[10px] text-muted-foreground">usage</p>
-                      </div>
-                    </div>
-                  )}
+                  {/* Removed download/upload/latency/usage display */}
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Bobot</span>
-                      <span className="font-medium">{iface.weight}% ({((iface.weight / totalWeight) * 100).toFixed(0)}% aktual)</span>
+                      <span className="text-muted-foreground">Bobot (mwan3 weight)</span>
+                      <span className="font-medium">{iface.weight} ({totalWeight > 0 ? ((iface.weight / totalWeight) * 100).toFixed(0) : 0}% aktual)</span>
                     </div>
-                    <Input 
+                    <Input
                       type="range"
                       value={iface.weight}
-                      onChange={(e) => handleWeightChange(iface.id, parseInt(e.target.value))}
+                      onChange={(e) => handleWeightChange(iface.iface, parseInt(e.target.value))}
                       min={1}
                       max={100}
                       className="w-full h-2"
@@ -442,19 +364,19 @@ const LoadBalancing = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
-                      onClick={() => handleTestConnection(iface.id)}
+                      onClick={() => handleTestConnection(iface.iface)}
                     >
                       <RefreshCw className="w-3 h-3 mr-1" />
-                      Test
+                      Check
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteInterface(iface.id)}
+                      onClick={() => handleDeleteInterface(iface.iface)}
                     >
                       <Trash2 className="w-3 h-3 text-red-400" />
                     </Button>
@@ -465,7 +387,7 @@ const LoadBalancing = () => {
               {interfaces.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Network className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Belum ada interface WAN</p>
+                  <p>Belum ada interface WAN di mwan3</p>
                 </div>
               )}
             </CardContent>
@@ -476,18 +398,18 @@ const LoadBalancing = () => {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                Distribusi Traffic
+                Distribusi Traffic Teoritis
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {interfaces.filter(i => i.enabled && i.status === "online").map((iface) => {
                 const percentage = totalWeight > 0 ? (iface.weight / totalWeight) * 100 : 0;
                 return (
-                  <div key={iface.id} className="space-y-1">
+                  <div key={iface.iface} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        {getTypeIcon(iface.type)}
-                        {iface.name}
+                      <span className="flex items-center gap-2 capitalize">
+                        {getTypeIcon(iface.type || "ethernet")}
+                        {iface.iface}
                       </span>
                       <span className="font-medium">{percentage.toFixed(0)}%</span>
                     </div>
@@ -499,7 +421,7 @@ const LoadBalancing = () => {
               {interfaces.filter(i => i.enabled && i.status === "online").length === 0 && (
                 <div className="flex items-center gap-2 text-yellow-400 text-sm">
                   <AlertCircle className="w-4 h-4" />
-                  <span>Tidak ada WAN online</span>
+                  <span>Tidak ada WAN online di mwan3</span>
                 </div>
               )}
             </CardContent>

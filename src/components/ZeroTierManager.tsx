@@ -65,7 +65,9 @@ const ZeroTierManager = () => {
     fetchZtPeers,
     toggleZt,
     joinZt,
-    leaveZt
+    leaveZt,
+    setZtFlags,
+    toggleZtBridge
   } = useLuciApi();
 
   const [newNetworkId, setNewNetworkId] = useState("");
@@ -122,12 +124,36 @@ const ZeroTierManager = () => {
     }
   };
 
-  const handleToggleNetworkSetting = (id: string, setting: string, value: boolean) => {
-    // Note: Config toggle in shell is complex, usually involves uci or file edit.
-    // For now, we'll just show a toast as it's not implemented on backend yet.
-    toast.info("Fitur pengaturan detail akan segera hadir", {
-      description: "Gunakan zerotier-cli atau portal ZeroTier untuk saat ini."
-    });
+  const handleToggleNetworkSetting = async (networkId: string, setting: string, value: boolean) => {
+    if (setting === "bridging") {
+      const res = await toggleZtBridge(networkId, value);
+      if (res.success) {
+        toast.success(`Broadcasting/Bridging ${value ? 'diaktifkan' : 'dinonaktifkan'}`);
+        fetchZtNetworks();
+      } else {
+        toast.error("Gagal mengubah pengaturan bridging");
+      }
+      return;
+    }
+
+    // For route flags (allowDefault, allowGlobal, allowManaged)
+    const currentNetwork = (ztNetworks || []).find((n: any) => n.networkId === networkId);
+    const flags = {
+      networkId,
+      allowDefault: currentNetwork?.allowDefault || false,
+      allowGlobal: currentNetwork?.allowGlobal || false,
+      allowManaged: currentNetwork?.allowManaged || true,
+      [setting]: value
+    };
+
+    const res = await setZtFlags(flags);
+    if (res.success) {
+      toast.success("Pengaturan rute diperbarui");
+      // Restarting zerotier takes a bit, so we wait before refresh
+      setTimeout(fetchZtNetworks, 2000);
+    } else {
+      toast.error("Gagal memperbarui pengaturan rute");
+    }
   };
 
   const handleRefresh = async () => {
@@ -323,6 +349,49 @@ const ZeroTierManager = () => {
                       <div className="p-3 rounded-lg bg-muted/30">
                         <p className="text-xs text-muted-foreground">Device</p>
                         <p className="font-mono font-semibold text-sm truncate">{network.dev || '-'}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="text-sm">Allow Default Route</Label>
+                          <p className="text-xs text-muted-foreground">Gunakan rute default ZeroTier</p>
+                        </div>
+                        <Switch
+                          checked={network.allowDefault === "1" || network.allowDefault === true}
+                          onCheckedChange={(v) => handleToggleNetworkSetting(network.networkId, "allowDefault", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="text-sm">Allow Global IP</Label>
+                          <p className="text-xs text-muted-foreground">Izinkan IP global ZeroTier</p>
+                        </div>
+                        <Switch
+                          checked={network.allowGlobal === "1" || network.allowGlobal === true}
+                          onCheckedChange={(v) => handleToggleNetworkSetting(network.networkId, "allowGlobal", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="text-sm">Allow Managed</Label>
+                          <p className="text-xs text-muted-foreground">Terima konfigurasi IP otomatis</p>
+                        </div>
+                        <Switch
+                          checked={network.allowManaged === "1" || network.allowManaged === true || network.allowManaged === undefined}
+                          onCheckedChange={(v) => handleToggleNetworkSetting(network.networkId, "allowManaged", v)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="text-sm">Bridging / Broadcast</Label>
+                          <p className="text-xs text-muted-foreground">Bridge ke interface br-lan</p>
+                        </div>
+                        <Switch
+                          checked={network.bridging === "1" || network.bridging === true}
+                          onCheckedChange={(v) => handleToggleNetworkSetting(network.networkId, "bridging", v)}
+                        />
                       </div>
                     </div>
                   </>
