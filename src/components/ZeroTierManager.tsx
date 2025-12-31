@@ -7,12 +7,12 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { 
-  Globe2, 
-  Network, 
-  Plus, 
-  Trash2, 
-  Copy, 
+import {
+  Globe2,
+  Network,
+  Plus,
+  Trash2,
+  Copy,
   RefreshCw,
   Shield,
   Users,
@@ -52,92 +52,90 @@ interface ZeroTierPeer {
   paths: number;
 }
 
+import { useEffect } from "react";
+import { useLuciApi } from "@/hooks/useLuciApi";
+
 const ZeroTierManager = () => {
-  const [isEnabled, setIsEnabled] = useState(true);
-  const [nodeId, setNodeId] = useState("a1b2c3d4e5");
+  const {
+    ztStatus,
+    ztNetworks,
+    ztPeers,
+    fetchZtStatus,
+    fetchZtNetworks,
+    fetchZtPeers,
+    toggleZt,
+    joinZt,
+    leaveZt
+  } = useLuciApi();
+
   const [newNetworkId, setNewNetworkId] = useState("");
-  const [networks, setNetworks] = useState<ZeroTierNetwork[]>([
-    {
-      id: "1",
-      name: "Home Network",
-      networkId: "8056c2e21c000001",
-      status: "connected",
-      assignedIp: "10.147.17.23",
-      gateway: "10.147.17.1",
-      allowDefault: false,
-      allowGlobal: false,
-      allowManaged: true,
-      bridging: false,
-      peers: 5,
-      lastActivity: "2 menit lalu"
-    },
-    {
-      id: "2",
-      name: "Office VPN",
-      networkId: "93afae5963000002",
-      status: "connected",
-      assignedIp: "10.243.0.15",
-      gateway: "10.243.0.1",
-      allowDefault: true,
-      allowGlobal: true,
-      allowManaged: true,
-      bridging: true,
-      peers: 12,
-      lastActivity: "5 menit lalu"
+
+  const isEnabled = ztStatus?.enabled || false;
+  const nodeId = ztStatus?.nodeId || "Menghubungkan...";
+
+  useEffect(() => {
+    const load = async () => {
+      await Promise.all([
+        fetchZtStatus(),
+        fetchZtNetworks(),
+        fetchZtPeers()
+      ]);
+    };
+    load();
+  }, []);
+
+  const handleToggleService = async (enabled: boolean) => {
+    const res = await toggleZt(enabled);
+    if (res.success) {
+      toast.success(enabled ? "ZeroTier diaktifkan" : "ZeroTier dinonaktifkan");
+      setTimeout(fetchZtStatus, 1500);
+    } else {
+      toast.error("Gagal mengubah status ZeroTier");
     }
-  ]);
-
-  const [peers, setPeers] = useState<ZeroTierPeer[]>([
-    { id: "1", name: "planet.zerotier.com", address: "62f865ae71", latency: 45, role: "planet", status: "online", paths: 2 },
-    { id: "2", name: "moon-sg.zerotier.com", address: "778cde7190", latency: 23, role: "moon", status: "online", paths: 1 },
-    { id: "3", name: "Laptop-Work", address: "a1b2c3d4e5", latency: 5, role: "leaf", status: "online", paths: 1 },
-    { id: "4", name: "Server-Home", address: "f5e4d3c2b1", latency: 12, role: "leaf", status: "online", paths: 2 },
-    { id: "5", name: "Phone-Android", address: "1a2b3c4d5e", latency: 0, role: "leaf", status: "offline", paths: 0 }
-  ]);
-
-  const handleToggleService = (enabled: boolean) => {
-    setIsEnabled(enabled);
-    toast.success(enabled ? "ZeroTier diaktifkan" : "ZeroTier dinonaktifkan");
   };
 
-  const handleJoinNetwork = () => {
+  const handleJoinNetwork = async () => {
     if (!newNetworkId || newNetworkId.length !== 16) {
       toast.error("Network ID harus 16 karakter");
       return;
     }
 
-    const newNetwork: ZeroTierNetwork = {
-      id: Date.now().toString(),
-      name: "New Network",
-      networkId: newNetworkId,
-      status: "pending",
-      assignedIp: "-",
-      gateway: "-",
-      allowDefault: false,
-      allowGlobal: false,
-      allowManaged: true,
-      bridging: false,
-      peers: 0,
-      lastActivity: "Baru saja"
-    };
+    const res = await joinZt(newNetworkId);
+    if (res.success) {
+      setNewNetworkId("");
+      toast.success("Bergabung ke jaringan...", {
+        description: `Menunggu otorisasi untuk ${newNetworkId}`
+      });
+      setTimeout(fetchZtNetworks, 2000);
+    } else {
+      toast.error("Gagal bergabung ke jaringan");
+    }
+  };
 
-    setNetworks([...networks, newNetwork]);
-    setNewNetworkId("");
-    toast.success("Bergabung ke jaringan...", {
-      description: `Menunggu otorisasi untuk ${newNetworkId}`
+  const handleLeaveNetwork = async (networkId: string) => {
+    const res = await leaveZt(networkId);
+    if (res.success) {
+      toast.success("Keluar dari jaringan");
+      fetchZtNetworks();
+    } else {
+      toast.error("Gagal keluar dari jaringan");
+    }
+  };
+
+  const handleToggleNetworkSetting = (id: string, setting: string, value: boolean) => {
+    // Note: Config toggle in shell is complex, usually involves uci or file edit.
+    // For now, we'll just show a toast as it's not implemented on backend yet.
+    toast.info("Fitur pengaturan detail akan segera hadir", {
+      description: "Gunakan zerotier-cli atau portal ZeroTier untuk saat ini."
     });
   };
 
-  const handleLeaveNetwork = (id: string) => {
-    setNetworks(networks.filter(n => n.id !== id));
-    toast.success("Keluar dari jaringan");
-  };
-
-  const handleToggleNetworkSetting = (id: string, setting: keyof ZeroTierNetwork, value: boolean) => {
-    setNetworks(networks.map(n => 
-      n.id === id ? { ...n, [setting]: value } : n
-    ));
-    toast.success("Pengaturan jaringan diperbarui");
+  const handleRefresh = async () => {
+    toast.promise(Promise.all([fetchZtStatus(), fetchZtNetworks(), fetchZtPeers()]), {
+      loading: 'Menyegarkan data...',
+      success: 'Data diperbarui',
+      error: 'Gagal menyegarkan data'
+    });
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -186,8 +184,8 @@ const ZeroTierManager = () => {
     }
   };
 
-  const connectedNetworks = networks.filter(n => n.status === "connected").length;
-  const onlinePeers = peers.filter(p => p.status === "online").length;
+  const connectedNetworks = (ztNetworks || []).filter((n: any) => n.status === "connected").length;
+  const onlinePeers = (ztPeers || []).filter((p: any) => p.status === "online").length;
 
   return (
     <div className="space-y-6 pb-24">
@@ -252,7 +250,7 @@ const ZeroTierManager = () => {
               <p className="text-xs text-muted-foreground">Peer Online</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/30">
-              <p className="text-2xl font-bold text-cyan-400">{peers.length}</p>
+              <p className="text-2xl font-bold text-cyan-400">{ztPeers?.length || 0}</p>
               <p className="text-xs text-muted-foreground">Total Peer</p>
             </div>
           </div>
@@ -298,14 +296,14 @@ const ZeroTierManager = () => {
           </Card>
 
           {/* Network List */}
-          {networks.map((network) => (
-            <Card key={network.id} className="glass-card">
+          {(ztNetworks || []).map((network: any) => (
+            <Card key={network.networkId} className="glass-card">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {getStatusIcon(network.status)}
                     <div>
-                      <CardTitle className="text-base">{network.name}</CardTitle>
+                      <CardTitle className="text-base">{network.name || 'Jaringan ZeroTier'}</CardTitle>
                       <p className="text-xs font-mono text-muted-foreground">
                         {network.networkId}
                       </p>
@@ -320,53 +318,11 @@ const ZeroTierManager = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="p-3 rounded-lg bg-muted/30">
                         <p className="text-xs text-muted-foreground">IP Address</p>
-                        <p className="font-mono font-semibold text-sm">{network.assignedIp}</p>
+                        <p className="font-mono font-semibold text-sm truncate">{network.assignedIp}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-muted/30">
-                        <p className="text-xs text-muted-foreground">Gateway</p>
-                        <p className="font-mono font-semibold text-sm">{network.gateway}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded-lg bg-muted/30">
-                        <p className="text-xs text-muted-foreground">Peers</p>
-                        <p className="font-semibold">{network.peers} perangkat</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30">
-                        <p className="text-xs text-muted-foreground">Aktivitas</p>
-                        <p className="font-semibold text-sm">{network.lastActivity}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm">Allow Default Route</Label>
-                        <Switch
-                          checked={network.allowDefault}
-                          onCheckedChange={(v) => handleToggleNetworkSetting(network.id, "allowDefault", v)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm">Allow Global IP</Label>
-                        <Switch
-                          checked={network.allowGlobal}
-                          onCheckedChange={(v) => handleToggleNetworkSetting(network.id, "allowGlobal", v)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm">Allow Managed</Label>
-                        <Switch
-                          checked={network.allowManaged}
-                          onCheckedChange={(v) => handleToggleNetworkSetting(network.id, "allowManaged", v)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm">Bridging</Label>
-                        <Switch
-                          checked={network.bridging}
-                          onCheckedChange={(v) => handleToggleNetworkSetting(network.id, "bridging", v)}
-                        />
+                        <p className="text-xs text-muted-foreground">Device</p>
+                        <p className="font-mono font-semibold text-sm truncate">{network.dev || '-'}</p>
                       </div>
                     </div>
                   </>
@@ -375,7 +331,7 @@ const ZeroTierManager = () => {
                 <Button
                   variant="destructive"
                   className="w-full"
-                  onClick={() => handleLeaveNetwork(network.id)}
+                  onClick={() => handleLeaveNetwork(network.networkId)}
                 >
                   <Unlink className="w-4 h-4 mr-2" />
                   Keluar dari Jaringan
@@ -391,24 +347,24 @@ const ZeroTierManager = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary" />
-                  Daftar Peer ({peers.length})
+                  Daftar Peer ({ztPeers?.length || 0})
                 </CardTitle>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handleRefresh}>
                   <RefreshCw className="w-4 h-4" />
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {peers.map((peer) => (
+              {(ztPeers || []).map((peer: any) => (
                 <div
                   key={peer.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     {getRoleIcon(peer.role)}
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">{peer.name}</p>
+                        <p className="font-medium text-sm truncate">{peer.name || 'Peer'}</p>
                         {getStatusIcon(peer.status)}
                       </div>
                       <p className="text-xs font-mono text-muted-foreground">
@@ -416,18 +372,18 @@ const ZeroTierManager = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     {peer.status === "online" ? (
                       <>
                         <p className="text-sm font-semibold text-green-400">
-                          {peer.latency}ms
+                          {peer.latency}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {peer.paths} path
+                        <p className="text-[10px] text-muted-foreground">
+                          {peer.path || 'no path'}
                         </p>
                       </>
                     ) : (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-[10px] h-5">
                         Offline
                       </Badge>
                     )}

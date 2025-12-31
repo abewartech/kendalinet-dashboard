@@ -38,6 +38,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
     const [securityInfo, setSecurityInfo] = useState<any>(null);
     const [scheduleInfo, setScheduleInfo] = useState<any>(null);
     const [trafficInfo, setTrafficInfo] = useState<any>(null);
+    const [ztStatus, setZtStatus] = useState<any>(null);
+    const [ztNetworks, setZtNetworks] = useState<any[]>([]);
+    const [ztPeers, setZtPeers] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -216,6 +219,114 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         }
     };
 
+    const fetchZtStatus = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_status.sh`);
+            const data = await res.json();
+            setZtStatus(data);
+        } catch (err) {
+            console.error('[ZeroTier Status] Fail:', err);
+        }
+    };
+
+    const fetchZtNetworks = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_networks.sh`);
+            const data = await res.json();
+            setZtNetworks(data.networks || []);
+        } catch (err) {
+            console.error('[ZeroTier Networks] Fail:', err);
+        }
+    };
+
+    const fetchZtPeers = async () => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_peers.sh`);
+            const data = await res.json();
+            setZtPeers(data.peers || []);
+        } catch (err) {
+            console.error('[ZeroTier Peers] Fail:', err);
+        }
+    };
+
+    const toggleZt = async (enabled: boolean) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_toggle.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const joinZt = async (networkId: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_join.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ networkId }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const leaveZt = async (networkId: string) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_leave.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ networkId }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const setZtFlags = async (params: { networkId: string, allowDefault?: boolean, allowGlobal?: boolean, allowManaged?: boolean }) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_set_flags.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const toggleZtBridge = async (networkId: string, enabled: boolean) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_bridge.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ networkId, enabled }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const toggleZtFirewall = async (enabled: boolean) => {
+        try {
+            const res = await fetch(`${CGI_BASE}/zerotier_firewall.sh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled }),
+            });
+            return await res.json();
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
     const saveWifi = async (ssid: string, hidden: boolean, password?: string) => {
         try {
             const res = await fetch(`${CGI_BASE}/wifi_save.sh`, {
@@ -281,7 +392,10 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
                 fetchVouchers(),
                 fetchSecurity(),
                 fetchSchedule(),
-                fetchTraffic()
+                fetchTraffic(),
+                fetchZtStatus(),
+                fetchZtNetworks(),
+                fetchZtPeers()
             ]);
             setLoading(false);
         };
@@ -308,6 +422,9 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         vouchersInfo,
         scheduleInfo,
         trafficInfo,
+        ztStatus,
+        ztNetworks,
+        ztPeers,
         loading,
         error,
         fetchStatus,
@@ -318,6 +435,15 @@ export const useLuciApi = (enabled: boolean = true, method: ApiMethod = 'cgi') =
         fetchVouchers,
         createVoucher,
         deleteVoucher,
+        fetchZtStatus,
+        fetchZtNetworks,
+        fetchZtPeers,
+        toggleZt,
+        joinZt,
+        leaveZt,
+        setZtFlags,
+        toggleZtBridge,
+        toggleZtFirewall,
         saveWifi,
         saveDns,
         applyBandwidthLimit,
