@@ -40,6 +40,10 @@ import VLANManagement from "@/components/VLANManagement";
 import SSHManager from "@/components/SSHManager";
 import ZeroTierManager from "@/components/ZeroTierManager";
 import SambaNASManager from "@/components/SambaNASManager";
+import MeshNetworkManager from "@/components/MeshNetworkManager";
+import NetworkTopologyMap from "@/components/NetworkTopologyMap";
+import EnhancedParentalControl from "@/components/EnhancedParentalControl";
+import ConfigurationWizard from "@/components/ConfigurationWizard";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -592,6 +596,30 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "samba" && (
         <div className="px-4">
           <SambaNASManager />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "mesh" && (
+        <div className="px-4">
+          <MeshNetworkManager />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "netmap" && (
+        <div className="px-4">
+          <NetworkTopologyMap />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "parentalv2" && (
+        <div className="px-4">
+          <EnhancedParentalControl />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "wizard" && (
+        <div className="px-4">
+          <ConfigurationWizard />
         </div>
       )}
 
