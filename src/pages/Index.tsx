@@ -39,6 +39,7 @@ import MACCloning from "@/components/MACCloning";
 import VLANManagement from "@/components/VLANManagement";
 import SSHManager from "@/components/SSHManager";
 import ZeroTierManager from "@/components/ZeroTierManager";
+import SambaNASManager from "@/components/SambaNASManager";
 import { toast } from "@/hooks/use-toast";
 import { useBrowserNotification } from "@/hooks/useBrowserNotification";
 import { useWebhookNotification } from "@/hooks/useWebhookNotification";
@@ -585,6 +586,12 @@ const Index = () => {
       {!showMultiRouterDashboard && activeTab === "zerotier" && (
         <div className="px-4">
           <ZeroTierManager />
+        </div>
+      )}
+
+      {!showMultiRouterDashboard && activeTab === "samba" && (
+        <div className="px-4">
+          <SambaNASManager />
         </div>
       )}
 
