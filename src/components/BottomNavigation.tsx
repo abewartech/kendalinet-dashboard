@@ -1,4 +1,4 @@
-import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft, Workflow, Plug, HardDrive, Network, LayoutGrid, Fingerprint, Layers, Terminal, Globe2, FolderOpen } from "lucide-react";
+import { Home, Smartphone, Wifi, Settings, Shield, Clock, Sparkles, Receipt, Gauge, Ticket, QrCode, Globe, Users, Activity, Zap, UserPlus, BarChart3, Sliders, ArrowRightLeft, Workflow, Plug, HardDrive, Network, LayoutGrid, Fingerprint, Layers, Terminal, Globe2, FolderOpen, Radio, Map, Wand2, Baby } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -34,6 +34,10 @@ const navItems = [
   { id: "ssh", label: "SSH", icon: Terminal },
   { id: "zerotier", label: "ZeroTier", icon: Globe2 },
   { id: "samba", label: "Samba", icon: FolderOpen },
+  { id: "mesh", label: "Mesh", icon: Radio },
+  { id: "netmap", label: "Peta", icon: Map },
+  { id: "parentalv2", label: "Parental", icon: Baby },
+  { id: "wizard", label: "Wizard", icon: Wand2 },
   { id: "sistem", label: "Sistem", icon: HardDrive },
   { id: "admin", label: "Admin", icon: Settings },
 ];
